@@ -27,23 +27,21 @@ export const translations = {
     ],
     teamTitle: "فريقنا.. نبض الابتكار",
     teamDesc: "نخبة من المهندسين والمبدعين الذين يسعون لإحداث تغيير تقني ملموس.",
-    teamMembers: [
-      { name: "كرم حسين العوضي", role: "إدارة الفريق" },
-      { name: "بهاء الدين قاسم", role: "إدارة الفريق" },
-      { name: "البراء رائد السيقلي", role: "مطور ويب" },
-      { name: "رؤى خالد أبو فول", role: "مطور موبايل" },
-      { name: "بسمة السيد", role: "مطور ويب" }
-    ],
-    contactTitle: "ابقَ على اتصال بنبضنا",
+    
+    contactTitle: "ابق على اتصال بنبضنا",
     contactDesc: "نحن هنا للإجابة على استفساراتكم ودعم طموحاتكم التقنية بكل السبل المتاحة",
     namePlaceholder: "أدخل اسمك هنا",
     emailPlaceholder: "example@mail.com",
     messagePlaceholder: "كيف يمكننا مساعدتك اليوم؟",
     sendBtn: "إرسال الطلب الآن",
-    address: "غزة، فلسطين - شارع النصر",
+    address: "غزة، فلسطين - شارع الوحدة",
     email: "manara.gaza.pal@gmail.com",
     phone: "+972 59-321-3379",
     footerText: "© 2026 منارة جميع الحقوق محفوظة مبادرة تقنية من قلب التحدي",
+    footerContactTitle: "تواصل مباشر",
+    footerLinksTitle: "روابط سريعة",
+    footerDesc: "مبادرة تعليمية تقنية ولدت من رحم المعاناة في غزة، لتمكين الشباب الفلسطيني في المجال البرمجي والتقني والمهاري وفق أعلى المعايير الدولية",
+    footerRights: "© 2026 منارة جميع الحقوق محفوظة مبادرة تقنية من قلب التحدي"
   },
   EN: {
     home: "Home",
@@ -73,22 +71,25 @@ export const translations = {
     ],
     teamTitle: "Our Team.. The Pulse of Innovation",
     teamDesc: "A group of elite engineers and creators striving to make a tangible technical change",
-    teamMembers: [
-      { name: "Karam Hussein Al-Awadi", role: "Team Management" },
-      { name: "Bahaa El-Din Qasim", role: "Team Management" },
-      { name: "Al-Baraa Raed Al-Saiqli", role: "Web Developer" },
-      { name: "Roa Khaled Abu Foul", role: "Mobile Developer" },
-      { name: "Basma Alsayed", role: "Web Developer" }
-    ],
+
     contactTitle: "Stay in touch with our pulse",
     contactDesc: "We are here to answer your inquiries and support your technical ambitions in every possible way",
     namePlaceholder: "Enter your name here",
     emailPlaceholder: "example@mail.com",
     messagePlaceholder: "How can we help you today?",
     sendBtn: "Send Request Now",
-    address: "Gaza, Palestine - Al-Nasr Street",
+    address: "Gaza, Palestine - Al-Wehda Street",
     email: "manara.gaza.pal@gmail.com",
     phone: "+972 59-321-3379",
     footerText: "© 2026 Manara. All rights reserved. A technical initiative from the heart of the challenge",
+    footerContactTitle: "Direct Contact",
+  footerLinksTitle: "Quick Links",
+  footerDesc: "A technical educational initiative born from the heart of hardship in Gaza, empowering Palestinian youth in software, technology, and skills according to highest international standards.",
+  footerRights: "© 2026 Manara. All rights reserved. A technical initiative from the heart of challenge.",
+  
+  navAbout: "About Us",
+  navServices: "Training Services",
+  navStories: "Success Stories",
+  navContact: "Contact Us"
   }
 };

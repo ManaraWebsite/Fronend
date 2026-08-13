@@ -1,3 +1,5 @@
+// Navbar.jsx
+
 import React, { useContext, useState } from 'react';
 import { LanguageContext } from '../LanguageContext';
 import { HiMenu, HiX } from 'react-icons/hi';
@@ -5,14 +7,16 @@ import { HiMenu, HiX } from 'react-icons/hi';
 function Navbar() {
   const { lang, setLang, t } = useContext(LanguageContext);
   const [isOpen, setIsOpen] = useState(false);
+  const isAr = lang === 'AR';
 
   const linkStyle = "text-white hover:text-orange-500 cursor-pointer transition-colors duration-300 font-medium"; 
   
   return (
-    <nav className="sticky top-4 z-50 bg-black/90 backdrop-blur-md border border-gray-700 rounded-2xl shadow-lg">
-      <div className="container mx-auto px-6 py-4 flex justify-between items-center">
-        {/* الشعار */}
-        <div className="text-2xl font-bold cursor-pointer">
+    /* تحويل الـ sticky إلى fixed مع top-0 و w-full لتثبيته أثناء السكرول وإلغاء المساحة البيضاء */
+<nav className="fixed top-4 left-0 right-0 w-[89%] mx-auto z-50 rounded-[8px] bg-[#1a1a2e]/90 backdrop-blur-md border border-gray-800 shadow-lg">      <div className={`container mx-auto px-6 py-4 flex justify-between items-center ${isAr ? 'flex-row' : 'flex-row-reverse md:flex-row'}`} dir={isAr ? 'rtl' : 'ltr'}>
+        
+        {/* الشعار (يبقى في مكانه الأساسي) */}
+        <div className="text-2xl font-bold cursor-pointer flex items-center">
           <img src='Logo.png' alt="Logo" className="h-10" />
         </div>
 
@@ -43,9 +47,8 @@ function Navbar() {
         </div>
       </div>
 
-      {/* القائمة المنسدلة للموبايل */}
       {isOpen && (
-        <div className="absolute top-full left-0 w-full bg-black/95 backdrop-blur-sm flex flex-col items-center gap-6 py-8 md:hidden border-t border-gray-950 z-40 rounded-b-2xl">
+        <div dir={isAr ? 'rtl' : 'ltr'} className="absolute top-full left-0 w-full bg-black/95 backdrop-blur-sm flex flex-col items-center gap-6 py-8 md:hidden border-t border-gray-900 z-40 rounded-b-2xl">
           <ul className="flex flex-col gap-6 text-center">
             <li><a href="#home" className={linkStyle} onClick={() => setIsOpen(false)}>{t.home}</a></li>
             <li><a href="#services" className={linkStyle} onClick={() => setIsOpen(false)}>{t.services}</a></li>

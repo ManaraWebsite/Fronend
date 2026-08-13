@@ -8,12 +8,13 @@ import Services from './Component/Services'
 import Team from './Component/Team'
 import Contact from './Component/Contact'
 import Footer from './Component/Footer'
+import SuccessStories from './Component/SuccessStories'
+import Home from './Component/Home'
 
 function App() {
   return (
     <LanguageProvider>
-      <Navbar />
-      <HeroSection />
+      <Home />
      <About />
      <Services />
      <Contact />
