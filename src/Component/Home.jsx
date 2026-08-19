@@ -1,14 +1,22 @@
-import React from 'react'
-import Navbar from './Navbar'
-import HeroSection from './HeroSection'
+import React from 'react';
+import Navbar from './Navbar';
+import HeroSection from './HeroSection';
+import About from './About';
+import Services from './Services';
+import Contact from './Contact';
+import Footer from './Footer';
 
-function Home() {
+const Home = () => {
   return (
-    <div className='w-full bg-[#1a1a2e]'>
-        <Navbar />
-        <HeroSection />
+    <div>
+      <Navbar />
+      <HeroSection />
+      <About />
+      <Services />
+      <Contact />
+      <Footer />
     </div>
-  )
-}
+  );
+};
 
-export default Home
+export default Home;

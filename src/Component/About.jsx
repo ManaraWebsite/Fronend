@@ -29,16 +29,16 @@ function About() {
   const isAr = lang === 'AR';
 
   return (
-    <section id='about' className="py-20 bg-white overflow-hidden">
+    <section id='about' className="py-20 bg-white overflow-hidden" dir={isAr ? 'rtl' : 'ltr'}>
       <div className="container mx-auto px-6 md:px-10">
-        <div className={`grid grid-cols-1 lg:grid-cols-2 gap-16 items-start ${isAr ? 'md:grid-flow-dense' : ''}`}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
           
-          {/* الجانب النصي */}
+          {/* الجانب النصي (يظهر في اليمين بالعربي، وفي اليسار بالإنجليزي) */}
           <motion.div 
             initial={{ x: isAr ? 100 : -100, opacity: 0 }}
             whileInView={{ x: 0, opacity: 1 }}
             transition={{ duration: 0.8 }}
-            className={`space-y-6 ${isAr ? 'lg:order-2' : ''}`}
+            className={`space-y-6 ${isAr ? 'text-right' : 'text-left'}`}
           >
             <h2 className="text-4xl font-bold text-[#1a1a2e] leading-snug">{t.aboutTitle}</h2>
             <p className="text-gray-600 leading-relaxed text-lg">{t.aboutDesc}</p>
@@ -60,8 +60,8 @@ function About() {
             </div>
           </motion.div>
 
-          {/* قسم النقاط والبطاقات */}
-          <div className={`space-y-8 ${isAr ? 'lg:order-1' : ''}`}>
+          {/* قسم النقاط والبطاقات (يظهر في اليسار بالعربي، وفي اليمين بالإنجليزي) */}
+          <div className="space-y-8">
             {t.points.map((point, index) => (
               <motion.div 
                 key={index}
@@ -74,7 +74,7 @@ function About() {
                   ease: "easeOut" 
                 }}
                 // استخدام border-s-4 لكي تتكيف الحدود البرتقالية تلقائياً مع الاتجاهين
-                className="flex gap-4 p-4 border-s-4 border-orange-500 bg-gray-50 rounded-lg shadow-sm"
+                className={`flex gap-4 p-4 border-s-4 border-orange-500 bg-gray-50 rounded-lg shadow-sm ${isAr ? 'text-right' : 'text-left'}`}
               >
                 <div className="text-orange-500 text-3xl mt-1">{icons[index]}</div>
                 <div>
