@@ -42,7 +42,14 @@ export const translations = {
     footerContactTitle: "تواصل مباشر",
     footerLinksTitle: "روابط سريعة",
     footerDesc: "مبادرة تعليمية تقنية ولدت من رحم المعاناة في غزة، لتمكين الشباب الفلسطيني في المجال البرمجي والتقني والمهاري وفق أعلى المعايير الدولية",
-    footerRights: "© 2026 منارة جميع الحقوق محفوظة مبادرة تقنية من قلب التحدي"
+    footerRights: "© 2026 منارة جميع الحقوق محفوظة مبادرة تقنية من قلب التحدي",
+    successStories: {
+      title: "أصوات من الميدان",
+      subtitle: "قصص نجاح كتبت بالتعب والأمل",
+      loading: "جاري تحميل القصص...",
+      error: "فشل في جلب البيانات من الخادم",
+    },
+  
   },
   EN: {
     home: "Home",
@@ -92,6 +99,12 @@ export const translations = {
   navAbout: "About Us",
   navServices: "Training Services",
   navStories: "Success Stories",
-  navContact: "Contact Us"
+  navContact: "Contact Us",
+  successStories: {
+      title: "Voices from the Field",
+      subtitle: "Success stories written with hardship and hope",
+      loading: "Loading stories...",
+      error: "Failed to fetch data from server",
+    },
   }
 };

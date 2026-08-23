@@ -3,31 +3,27 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { LanguageContext } from '../LanguageContext';
 import { motion } from 'framer-motion';
+import axiosClient from '../Api/axiosClient';
 
 function SuccessStories() {
-  const { lang, t } = useContext(LanguageContext);
+  const { lang } = useContext(LanguageContext);
   const isAr = lang === 'AR';
 
   const [stories, setStories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // جلب البيانات من الـ Backend عند تحميل المكون
   useEffect(() => {
     const fetchStories = async () => {
       try {
         setLoading(true);
-        // الرابط الخاص بالباك اند
-        const response = await fetch('https://your-backend-api.com/api/stories');
+        const response = await axiosClient.get('/field-voices');
         
-        if (!response.ok) {
-          throw new Error('فشل في جلب البيانات من الخادم');
-        }
-        
-        const data = await response.json();
+        const data = response.data.data || response.data;
         setStories(data);
       } catch (err) {
-        setError(err.message);
+        console.error('Error fetching success stories:', err);
+        setError('فشل في جلب البيانات من الخادم');
       } finally {
         setLoading(false);
       }
@@ -38,7 +34,7 @@ function SuccessStories() {
 
   if (loading) {
     return (
-      <div className="py-20 bg-[#0b0c16] text-center text-white">
+      <div className="py-20 bg-[#1a1a2e]/90 text-center text-white">
         <p className="text-xl">{isAr ? 'جاري تحميل القصص...' : 'Loading stories...'}</p>
       </div>
     );
@@ -46,7 +42,7 @@ function SuccessStories() {
 
   if (error) {
     return (
-      <div className="py-20 bg-[#0b0c16] text-center text-red-500">
+      <div className="py-20 bg-[#1a1a2e]/90 text-center text-red-500">
         <p>{error}</p>
       </div>
     );
@@ -83,25 +79,25 @@ function SuccessStories() {
                   {storyNumber}
                 </span>
 
-                <p className={`text-gray-300 leading-relaxed mb-8 relative z-10 ${isAr ? 'text-right' : 'text-left'}`}>
-                  "{isAr ? story.contentAr : story.contentEn}"
+                <p className="text-gray-300 leading-relaxed mb-8 relative z-10 text-left">
+                  "{story.quote}"
                 </p>
 
-                <div className={`flex items-center gap-4 pt-4 border-t border-gray-800/60 ${isAr ? 'flex-row-reverse text-right' : 'flex-row text-left'}`}>
+                <div className="flex items-center gap-4 pt-4 border-t border-gray-800/60 flex-row text-left">
                   <div className="w-12 h-12 rounded-full bg-orange-500/20 border border-orange-500/40 flex items-center justify-center text-orange-400 font-bold text-lg shrink-0">
-                    {story.avatar ? (
-                      <img src={story.avatar} alt={story.name} className="w-full h-full rounded-full object-cover" />
+                    {story.image ? (
+                      <img src={story.image} alt={story.name} className="w-full h-full rounded-full object-cover" />
                     ) : (
-                      (isAr ? story.nameAr : story.nameEn)?.[0] || 'ع'
+                      story.name?.[0] || 'ع'
                     )}
                   </div>
 
                   <div>
                     <h4 className="font-bold text-white text-base">
-                      {isAr ? story.nameAr : story.nameEn}
+                      {story.name}
                     </h4>
                     <span className="text-xs text-orange-400">
-                      {isAr ? story.batchAr : story.batchEn}
+                      {story.role}
                     </span>
                   </div>
                 </div>

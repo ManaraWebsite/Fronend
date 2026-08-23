@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, useNavigate, Link } from 'react-router-dom';
-import { FiFileText, FiLayers, FiLogOut } from 'react-icons/fi';
+import { FiFileText, FiLayers, FiMic, FiLogOut } from 'react-icons/fi';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -32,6 +32,15 @@ const AdminDashboard = () => {
             >
               <FiLayers size={18} />
               <span>Posts Management</span>
+            </Link>
+
+            {/* إضافة خيار أصوات من الميدان هنا */}
+            <Link 
+              to="/admin/field-voices" 
+              className="flex items-center space-x-3 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-300 hover:bg-[#ff7a00]/10 hover:text-[#ff7a00] transition"
+            >
+              <FiMic size={18} />
+              <span>Field Voices</span>
             </Link>
           </nav>
         </div>

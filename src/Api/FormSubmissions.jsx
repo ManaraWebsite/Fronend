@@ -1,31 +1,54 @@
 import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import axiosClient from './axiosClient';
 import { FiDownload, FiArrowLeft } from 'react-icons/fi';
 
-const FormSubmissions = ({ formSlug, onBack }) => {
-  const [submissions, setSubmissions] = useState([]);
+const FormSubmissions = () => {
+  const { slug } = useParams();
+  const navigate = useNavigate();
+  
+  const [submissionsData, setSubmissionsData] = useState({ form: null, submissions: [] });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchSubmissions = async () => {
       try {
-        const response = await axiosClient.get(`/admin/forms/${formSlug}/submissions`);
-        setSubmissions(response.data.data || response.data);
+        const response = await axiosClient.get(`/admin/forms/${slug}/submissions`);
+        // بناءً على صورة الـ Postman الـ response يأتي بالشكل { form: 6, submissions: [...] }
+        setSubmissionsData(response.data);
       } catch (error) {
         console.error('Error fetching submissions:', error);
       } finally {
         setLoading(false);
       }
     };
-    if (formSlug) {
+
+    if (slug) {
       fetchSubmissions();
     }
-  }, [formSlug]);
+  }, [slug]);
 
   // تصدير الردود إلى ملف CSV
-  const handleExportCSV = () => {
-    window.open(`http://43.156.53.131/api/admin/forms/${formSlug}/submissions/export`, '_blank');
+  const handleExportCSV = async () => {
+    try {
+      const response = await axiosClient.get(`/admin/forms/${slug}/submissions/export`, {
+        responseType: 'blob',
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${slug}-submissions.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error('Error exporting CSV:', error);
+      window.open(`http://43.156.53.131/api/admin/forms/${slug}/submissions/export`, '_blank');
+    }
   };
+
+  const submissions = submissionsData.submissions || [];
 
   return (
     <div className="p-8 max-w-7xl mx-auto min-h-screen bg-[#0d1117] text-gray-100" dir="ltr">
@@ -38,25 +61,24 @@ const FormSubmissions = ({ formSlug, onBack }) => {
             <span>/</span>
             <span>Forms</span>
             <span>/</span>
-            <span className="text-[#ff7a00] font-semibold">{formSlug}</span>
+            <span className="text-[#ff7a00] font-semibold">{slug}</span>
           </div>
           <h1 className="text-2xl font-bold text-white">Form Submissions</h1>
           <p className="text-sm text-gray-400 mt-1">Review all submissions received for this form.</p>
         </div>
 
         <div className="flex items-center space-x-3">
-          {onBack && (
-            <button
-              onClick={onBack}
-              className="px-4 py-2.5 bg-[#161b22] border border-gray-800 text-gray-300 rounded-xl text-sm font-semibold hover:bg-gray-800 hover:text-white transition flex items-center space-x-2 shadow-xs"
-            >
-              <FiArrowLeft size={16} />
-              <span>Back to Forms</span>
-            </button>
-          )}
+          <button
+            onClick={() => navigate('/admin/forms')}
+            className="px-4 py-2.5 bg-[#161b22] border border-gray-800 text-gray-300 rounded-xl text-sm font-semibold hover:bg-gray-800 hover:text-white transition flex items-center space-x-2 shadow-xs cursor-pointer"
+          >
+            <FiArrowLeft size={16} />
+            <span>Back to Forms</span>
+          </button>
+          
           <button
             onClick={handleExportCSV}
-            className="px-4 py-2.5 bg-[#ff7a00] text-white rounded-xl text-sm font-semibold hover:bg-[#e06c00] transition flex items-center space-x-2 shadow-sm"
+            className="px-4 py-2.5 bg-[#ff7a00] text-white rounded-xl text-sm font-semibold hover:bg-[#e06c00] transition flex items-center space-x-2 shadow-sm cursor-pointer"
           >
             <FiDownload size={16} />
             <span>Export CSV</span>
@@ -76,20 +98,29 @@ const FormSubmissions = ({ formSlug, onBack }) => {
             <thead className="bg-[#0d1117]/70 border-b border-gray-800 text-xs text-gray-400 uppercase tracking-wider">
               <tr>
                 <th className="p-4 font-semibold"># ID</th>
-                <th className="p-4 font-semibold">Submitted Data</th>
-                <th className="p-4 font-semibold">Date</th>
+                <th className="p-4 font-semibold">Submitted Answers</th>
+                <th className="p-4 font-semibold">Submitted At</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-800/60 text-sm text-gray-300">
               {submissions.map((sub, idx) => (
-                <tr key={idx} className="hover:bg-gray-800/30 transition">
-                  <td className="p-4 font-medium text-white">{sub.id || idx + 1}</td>
+                <tr key={sub.id || idx} className="hover:bg-gray-800/30 transition">
+                  <td className="p-4 font-medium text-white">#{sub.id}</td>
                   <td className="p-4">
-                    <pre className="text-xs bg-[#0d1117] border border-gray-800 p-3 rounded-xl text-gray-300 overflow-x-auto font-mono">
-                      {JSON.stringify(sub.data || sub, null, 2)}
-                    </pre>
+                    <div className="space-y-2">
+                      {sub.answers && sub.answers.length > 0 ? (
+                        sub.answers.map((ans) => (
+                          <div key={ans.id} className="bg-[#0d1117] border border-gray-800 p-2.5 rounded-xl text-xs flex flex-col">
+                            <span className="text-[#ff7a00] font-semibold mb-0.5">{ans.field_name}:</span>
+                            <span className="text-gray-200">{ans.answer}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <span className="text-gray-500 text-xs">No answers available</span>
+                      )}
+                    </div>
                   </td>
-                  <td className="p-4 text-gray-500 text-xs">{sub.created_at || 'N/A'}</td>
+                  <td className="p-4 text-gray-400 text-xs">{sub.submitted_at || 'N/A'}</td>
                 </tr>
               ))}
             </tbody>

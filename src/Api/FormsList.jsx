@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axiosClient from './axiosClient';
 import { FiPlus, FiEdit3, FiEye, FiTrash2, FiCopy } from 'react-icons/fi';
 
-const FormsList = ({ onNavigate }) => {
+const FormsList = () => {
+  const navigate = useNavigate();
   const [forms, setForms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
@@ -58,8 +60,8 @@ const FormsList = ({ onNavigate }) => {
           <p className="text-sm text-gray-400 mt-1">Manage your dynamic forms and check submissions.</p>
         </div>
         <button
-          onClick={() => onNavigate('create-form')}
-          className="bg-[#ff7a00] text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#e06c00] transition shadow-md shadow-orange-500/10 flex items-center space-x-2"
+          onClick={() => navigate('/admin/forms/create')}
+          className="bg-[#ff7a00] text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#e06c00] transition shadow-md shadow-orange-500/10 flex items-center space-x-2 cursor-pointer"
         >
           <FiPlus size={18} />
           <span>Create Form</span>
@@ -78,8 +80,8 @@ const FormsList = ({ onNavigate }) => {
         <div className="bg-[#161b22] rounded-2xl p-12 text-center border border-gray-800 shadow-xs">
           <p className="text-gray-400 text-sm mb-4">No forms found yet.</p>
           <button
-            onClick={() => onNavigate('create-form')}
-            className="text-[#ff7a00] font-semibold text-sm hover:underline"
+            onClick={() => navigate('/admin/forms/create')}
+            className="text-[#ff7a00] font-semibold text-sm hover:underline cursor-pointer"
           >
             Create your first form &rarr;
           </button>
@@ -108,17 +110,24 @@ const FormsList = ({ onNavigate }) => {
                   <td className="p-4 text-right space-x-2">
                     {/* زر الردود Submissions */}
                     <button
-                      onClick={() => onNavigate('submissions', form.slug)}
+                      onClick={() => navigate(`/admin/forms/${form.slug}/submissions`)}
                       title="View Submissions"
-                      className="p-2 bg-blue-500/10 text-blue-400 rounded-lg hover:bg-blue-500/20 transition inline-flex items-center"
+                      className="p-2 bg-blue-500/10 text-blue-400 rounded-lg hover:bg-blue-500/20 transition inline-flex items-center cursor-pointer"
                     >
                       <FiEye size={16} />
+                      <button 
+  title="Preview Form"
+  onClick={() => window.open(`/forms/${form.slug}`, '_blank')}
+  className="p-2 bg-gray-800 text-gray-300 hover:text-white rounded-lg transition"
+>
+  <FiEye size={16} />
+</button>
                     </button>
                     {/* زر التعديل */}
                     <button
-                      onClick={() => onNavigate('update-form', form.slug)}
+                      onClick={() => navigate(`/admin/forms/edit/${form.slug}`)}
                       title="Edit Form"
-                      className="p-2 bg-amber-500/10 text-amber-400 rounded-lg hover:bg-amber-500/20 transition inline-flex items-center"
+                      className="p-2 bg-amber-500/10 text-amber-400 rounded-lg hover:bg-amber-500/20 transition inline-flex items-center cursor-pointer"
                     >
                       <FiEdit3 size={16} />
                     </button>
@@ -126,7 +135,7 @@ const FormsList = ({ onNavigate }) => {
                     <button
                       onClick={() => handleDuplicate(form.slug)}
                       title="Duplicate Form"
-                      className="p-2 bg-gray-800 text-gray-300 rounded-lg hover:bg-gray-700 transition inline-flex items-center"
+                      className="p-2 bg-gray-800 text-gray-300 rounded-lg hover:bg-gray-700 transition inline-flex items-center cursor-pointer"
                     >
                       <FiCopy size={16} />
                     </button>
@@ -134,7 +143,7 @@ const FormsList = ({ onNavigate }) => {
                     <button
                       onClick={() => handleDelete(form.slug)}
                       title="Delete Form"
-                      className="p-2 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition inline-flex items-center"
+                      className="p-2 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition inline-flex items-center cursor-pointer"
                     >
                       <FiTrash2 size={16} />
                     </button>
