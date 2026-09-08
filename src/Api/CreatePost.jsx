@@ -1,14 +1,24 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import axiosClient from '../Api/axiosClient';
 
 const CreatePost = () => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [coverImage, setCoverImage] = useState(null);
-  const [status, setStatus] = useState('published'); // القيمة الافتراضية
+  const [imagePreview, setImagePreview] = useState(null); 
+  const [status, setStatus] = useState('published');
   
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+
+  // دالة لاختيار الصورة ومعاينتها
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setCoverImage(file);
+      setImagePreview(URL.createObjectURL(file)); 
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -18,97 +28,107 @@ const CreatePost = () => {
     const formData = new FormData();
     formData.append('title', title);
     formData.append('content', content);
+    formData.append('status', status);
+    
     if (coverImage) {
       formData.append('cover_image', coverImage);
     }
-    formData.append('status', status);
 
     try {
-      const response = await axios.post(
-        'http://43.156.53.131/api/admin/posts',
-        formData,
-        {
-          headers: {
-            'Authorization': 'Bearer 1|kM6kQ7aRYOrowRLTrCpy3oLpeAXdRUFvvPbVaB1N044f379c',
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      );
+      const response = await axiosClient.post('/admin/posts', formData);
 
-      setMessage('تم إنشاء البوست بنجاح!');
+      setMessage('تم إنشاء البوست مع الصورة بنجاح!');
       console.log('Response:', response.data);
       
       // تفريغ الحقول بعد النجاح
       setTitle('');
       setContent('');
       setCoverImage(null);
+      setImagePreview(null);
       setStatus('published');
     } catch (error) {
       console.error('Error creating post:', error);
-      setMessage(error.response?.data?.message || 'حدث خطأ أثناء إنشاء البوست.');
+      const errorData = error.response?.data;
+      let errorMsg = errorData?.message || 'حدث خطأ أثناء إنشاء البوست.';
+      
+      if (errorData?.errors) {
+        const firstKey = Object.keys(errorData.errors)[0];
+        if (firstKey) {
+          errorMsg = errorData.errors[firstKey][0];
+        }
+      }
+      
+      setMessage(errorMsg);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-xl mx-auto mt-10 p-6 bg-white rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold mb-6 text-gray-800">إنشاء بوست جديد</h2>
+    <div className="max-w-xl mx-auto mt-10 p-6 bg-[#23233c] text-white rounded-2xl shadow-xl border border-orange-500/10">
+      <h2 className="text-2xl font-bold mb-6 text-white text-center">إنشاء بوست جديد</h2>
 
       {message && (
-        <div className={`mb-4 p-3 rounded ${message.includes('نجاح') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+        <div className={`mb-4 p-3 rounded text-sm font-medium ${message.includes('نجاح') ? 'bg-green-500/20 text-green-300 border border-green-500/30' : 'bg-red-500/20 text-red-300 border border-red-500/30'}`}>
           {message}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* حقل العنوان (title) */}
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {/* حقل العنوان */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">العنوان (title)</label>
+          <label className="block text-sm font-semibold text-gray-300 mb-2">العنوان (title)</label>
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 bg-[#1a1a2e] text-white border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-base placeholder-gray-500 shadow-inner"
             placeholder="أدخل عنوان البوست..."
           />
         </div>
 
-        {/* حقل المحتوى (content) */}
+        {/* حقل المحتوى */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">المحتوى (content)</label>
+          <label className="block text-sm font-semibold text-gray-300 mb-2">المحتوى (content)</label>
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
             required
-            rows="4"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            rows="5"
+            className="w-full px-4 py-3 bg-[#1a1a2e] text-white border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-base placeholder-gray-500 shadow-inner resize-y"
             placeholder="أدخل محتوى البوست..."
           ></textarea>
         </div>
 
-        {/* حقل الصورة (cover_image) */}
+        {/* حقل صورة الغلاف مع معاينة */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">صورة الغلاف (cover_image)</label>
+          <label className="block text-sm font-semibold text-gray-300 mb-2">صورة الغلاف (cover_image)</label>
           <input
             type="file"
-            onChange={(e) => setCoverImage(e.target.files[0])}
+            onChange={handleImageChange}
             accept="image/*"
-            className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            className="w-full text-sm text-gray-400 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-orange-500/20 file:text-orange-400 hover:file:bg-orange-500/30 cursor-pointer"
           />
+          
+          {imagePreview && (
+            <div className="mt-3">
+              <p className="text-xs text-gray-400 mb-1">معاينة الصورة:</p>
+              <img src={imagePreview} alt="Preview" className="h-32 w-auto object-cover rounded-lg border border-gray-700" />
+            </div>
+          )}
         </div>
 
-        {/* حقل الحالة (status) */}
+        {/* حقل الحالة */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">الحالة (status)</label>
+          <label className="block text-sm font-semibold text-gray-300 mb-2">الحالة (status)</label>
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 bg-[#1a1a2e] text-white border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-base shadow-inner"
           >
-            <option value="published">Published (منشور)</option>
-            <option value="draft">Draft (مسودة)</option>
+            <option value="published" className="bg-[#1a1a2e] text-white">Published (منشور)</option>
+            <option value="draft" className="bg-[#1a1a2e] text-white">Draft (مسودة)</option>
           </select>
         </div>
 
@@ -116,7 +136,7 @@ const CreatePost = () => {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-200 disabled:bg-blue-300"
+          className="w-full bg-orange-500 text-white font-semibold py-3 px-4 rounded-lg hover:bg-orange-600 transition duration-200 disabled:bg-orange-400/50 shadow-lg cursor-pointer"
         >
           {loading ? 'جاري الإرسال...' : 'إنشاء البوست'}
         </button>

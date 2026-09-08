@@ -3,6 +3,7 @@
 import React, { useContext, useState } from 'react';
 import { LanguageContext } from '../LanguageContext';
 import { HiMenu, HiX } from 'react-icons/hi';
+import { HiGlobeAlt } from 'react-icons/hi2'; // استيراد أيقونة الكرة الأرضية
 
 function Navbar() {
   const { lang, setLang, t } = useContext(LanguageContext);
@@ -12,9 +13,7 @@ function Navbar() {
   const linkStyle = "text-white hover:text-orange-500 cursor-pointer transition-colors duration-300 font-medium"; 
   
   return (
-    <nav className="fixed top-4 left-0 right-0 w-[89%] mx-auto z-50 rounded-[8px] bg-[#1a1a2e]/90 backdrop-blur-md border border-gray-800 shadow-lg">
-      
-      {/* تحديد الاتجاه العام كـ RTL دائماً لضمان تثبيت الشعار يميناً والأزرار يساراً */}
+<nav className="fixed top-4 left-0 right-0 w-[89%] mx-auto z-50 rounded-[50px] bg-[#1a1a2e]/50 backdrop-blur-md border border-white/10 shadow-lg">      {/* تحديد الاتجاه العام كـ RTL دائماً لضمان تثبيت الشعار يميناً والأزرار يساراً */}
       <div className="container mx-auto px-6 py-4 flex justify-between items-center flex-row" dir="rtl">
         
         {/* 1. الشعار (المنارة) - يتثبت في أقصى اليمين دائماً */}
@@ -32,11 +31,14 @@ function Navbar() {
 
         {/* 3. الأزرار (اللغة + اتصل بنا + القائمة للموبايل) - تتثبت في أقصى اليسار دائماً */}
         <div className="flex gap-4 items-center" dir="ltr">
+          
+          {/* زر تغيير اللغة مع الأيقونة */}
           <button 
             onClick={setLang}
-            className="border border-white px-3 py-1 rounded text-white hover:bg-white hover:text-black hover:border-white active:scale-95 transition-all duration-200 text-sm font-medium"
+            className="border border-white/30 px-3.5 py-1.5 rounded-lg text-white hover:bg-white hover:text-black hover:border-white active:scale-95 transition-all duration-200 text-sm font-medium flex items-center gap-2"
           >
-            {lang === 'AR' ? 'English' : 'العربية'}
+            <HiGlobeAlt className="text-lg" />
+            <span>{lang === 'AR' ? 'English' : 'العربية'}</span>
           </button>
 
           <a href="#contact" className="hidden md:block bg-orange-500 px-6 py-2 rounded-full font-bold hover:bg-orange-600 active:scale-95 transition-all duration-200 text-white">

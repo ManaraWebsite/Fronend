@@ -1,4 +1,4 @@
-// SuccessStories.jsx
+// SuccessStories.jsx (محدث ليدعم اتجاه اللغة ديناميكياً)
 
 import React, { useState, useEffect, useContext } from 'react';
 import { LanguageContext } from '../LanguageContext';
@@ -23,14 +23,29 @@ function SuccessStories() {
         setStories(data);
       } catch (err) {
         console.error('Error fetching success stories:', err);
-        setError('فشل في جلب البيانات من الخادم');
+        setError(isAr ? 'فشل في جلب البيانات من الخادم' : 'Failed to fetch data from server');
       } finally {
         setLoading(false);
       }
     };
 
     fetchStories();
-  }, []);
+  }, [isAr]);
+
+  // دالة ذكية لاستخراج النص حسب اللغة مع دعم حالات الـ null
+  const getLocalizedText = (field) => {
+    if (!field) return '';
+    
+    if (typeof field === 'object') {
+      if (isAr) {
+        return field.ar || field.en || '';
+      } else {
+        return field.en || field.ar || '';
+      }
+    }
+    
+    return field;
+  };
 
   if (loading) {
     return (
@@ -49,7 +64,7 @@ function SuccessStories() {
   }
 
   return (
-    <section id="stories" className="py-20 bg-[#0b0c16] text-white overflow-hidden">
+    <section id="stories" className="py-20 bg-[#0b0c16] text-white overflow-hidden" dir={isAr ? 'rtl' : 'ltr'}>
       <div className="container mx-auto px-6 md:px-10">
         
         <div className="text-center mb-16 space-y-3">
@@ -66,6 +81,10 @@ function SuccessStories() {
           {stories.map((story, index) => {
             const storyNumber = String(index + 1).padStart(2, '0');
 
+            const quoteText = getLocalizedText(story.quote);
+            const nameText = getLocalizedText(story.name);
+            const roleText = getLocalizedText(story.role);
+
             return (
               <motion.div
                 key={story.id || index}
@@ -75,29 +94,30 @@ function SuccessStories() {
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 className="relative bg-[#16182e]/60 border border-gray-800/80 p-8 rounded-[2rem] flex flex-col justify-between backdrop-blur-sm hover:border-orange-500/50 transition-all group"
               >
-                <span className="absolute top-6 left-6 text-4xl font-black text-gray-700/30 select-none group-hover:text-orange-500/20 transition-colors">
+                {/* رقم القصة يعكس مكانه تلقائياً حسب اتجاه الصفحة */}
+                <span className={`absolute top-6 ${isAr ? 'left-6' : 'right-6'} text-4xl font-black text-gray-700/30 select-none group-hover:text-orange-500/20 transition-colors`}>
                   {storyNumber}
                 </span>
 
-                <p className="text-gray-300 leading-relaxed mb-8 relative z-10 text-left">
-                  "{story.quote}"
+                <p className={`text-gray-300 leading-relaxed mb-8 relative z-10 ${isAr ? 'text-right' : 'text-left'}`}>
+                  "{quoteText}"
                 </p>
 
-                <div className="flex items-center gap-4 pt-4 border-t border-gray-800/60 flex-row text-left">
-                  <div className="w-12 h-12 rounded-full bg-orange-500/20 border border-orange-500/40 flex items-center justify-center text-orange-400 font-bold text-lg shrink-0">
+                <div className={`flex items-center gap-4 pt-4 border-t border-gray-800/60 ${isAr ? 'flex-row-reverse text-right' : 'flex-row text-left'}`}>
+                  <div className="w-12 h-12 rounded-full bg-orange-500/20 border border-orange-500/40 flex items-center justify-center text-orange-400 font-bold text-lg shrink-0 overflow-hidden">
                     {story.image ? (
-                      <img src={story.image} alt={story.name} className="w-full h-full rounded-full object-cover" />
+                      <img src={story.image} alt={nameText} className="w-full h-full rounded-full object-cover" />
                     ) : (
-                      story.name?.[0] || 'ع'
+                      nameText?.[0] || 'ع'
                     )}
                   </div>
 
                   <div>
                     <h4 className="font-bold text-white text-base">
-                      {story.name}
+                      {nameText}
                     </h4>
                     <span className="text-xs text-orange-400">
-                      {story.role}
+                      {roleText}
                     </span>
                   </div>
                 </div>

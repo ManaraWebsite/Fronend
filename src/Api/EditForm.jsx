@@ -8,7 +8,7 @@ import {
 } from 'react-icons/fi';
 
 const EditForm = () => {
-  const { slug } = useParams(); // استقبال الـ slug من الرابط
+  const { slug } = useParams(); 
   const navigate = useNavigate();
 
   const [title, setTitle] = useState('');

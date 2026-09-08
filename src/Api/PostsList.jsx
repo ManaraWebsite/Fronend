@@ -14,7 +14,6 @@ const PostsList = () => {
     try {
       setLoading(true);
       const response = await axiosClient.get('/admin/posts');
-      // حسب هيكل الـ response في الباك إند (غالباً response.data.data أو response.data مباشرة)
       setPosts(response.data.data || response.data);
     } catch (error) {
       console.error('Error fetching posts:', error);
@@ -105,57 +104,64 @@ const PostsList = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-800/60 text-sm">
-              {posts.map((post) => (
-                <tr key={post.id || post.slug} className="hover:bg-gray-800/30 transition">
-                  <td className="p-4">
-                    <div className="font-semibold text-gray-200">{post.title || 'Untitled'}</div>
-                    <div className="text-xs text-gray-500">{post.slug}</div>
-                  </td>
-                  <td className="p-4">
-                    <span className={`inline-px px-2.5 py-1 rounded-full text-xs font-medium ${post.status === 'published' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'}`}>
-                      {post.status || 'draft'}
-                    </span>
-                  </td>
-                  <td className="p-4 text-right space-x-2">
-                    {/* زر النشر أو إلغاء النشر */}
-                    {post.status === 'published' ? (
-                      <button 
-                        onClick={() => handleUnpublish(post.slug)}
-                        title="Unpublish"
-                        className="p-2 bg-gray-800 text-yellow-400 hover:bg-gray-700 rounded-lg transition"
-                      >
-                        <FiXCircle size={16} />
-                      </button>
-                    ) : (
-                      <button 
-                        onClick={() => handlePublish(post.slug)}
-                        title="Publish"
-                        className="p-2 bg-gray-800 text-green-400 hover:bg-gray-700 rounded-lg transition"
-                      >
-                        <FiCheckCircle size={16} />
-                      </button>
-                    )}
+              {posts.map((post) => {
+                // معالجة العنوان لتجنب خطأ عرض الكائنات (Objects) في React
+                const titleText = typeof post.title === 'object' 
+                  ? post.title?.ar || post.title?.en || 'Untitled' 
+                  : post.title || 'Untitled';
 
-                    {/* زر التعديل */}
-                    <button 
-                      onClick={() => navigate(`/admin/posts/edit/${post.slug}`)}
-                      title="Edit"
-                      className="p-2 bg-gray-800 text-blue-400 hover:bg-gray-700 rounded-lg transition"
-                    >
-                      <FiEdit2 size={16} />
-                    </button>
+                return (
+                  <tr key={post.id || post.slug} className="hover:bg-gray-800/30 transition">
+                    <td className="p-4">
+                      <div className="font-semibold text-gray-200">{titleText}</div>
+                      <div className="text-xs text-gray-500">{post.slug}</div>
+                    </td>
+                    <td className="p-4">
+                      <span className={`inline-px px-2.5 py-1 rounded-full text-xs font-medium ${post.status === 'published' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'}`}>
+                        {post.status || 'draft'}
+                      </span>
+                    </td>
+                    <td className="p-4 text-right space-x-2">
+                      {/* زر النشر أو إلغاء النشر */}
+                      {post.status === 'published' ? (
+                        <button 
+                          onClick={() => handleUnpublish(post.slug)}
+                          title="Unpublish"
+                          className="p-2 bg-gray-800 text-yellow-400 hover:bg-gray-700 rounded-lg transition"
+                        >
+                          <FiXCircle size={16} />
+                        </button>
+                      ) : (
+                        <button 
+                          onClick={() => handlePublish(post.slug)}
+                          title="Publish"
+                          className="p-2 bg-gray-800 text-green-400 hover:bg-gray-700 rounded-lg transition"
+                        >
+                          <FiCheckCircle size={16} />
+                        </button>
+                      )}
 
-                    {/* زر الحذف */}
-                    <button 
-                      onClick={() => handleDelete(post.slug)}
-                      title="Delete"
-                      className="p-2 bg-gray-800 text-red-400 hover:bg-gray-700 rounded-lg transition"
-                    >
-                      <FiTrash2 size={16} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
+                      {/* زر التعديل */}
+                      <button 
+                        onClick={() => navigate(`/admin/posts/edit/${post.slug}`)}
+                        title="Edit"
+                        className="p-2 bg-gray-800 text-blue-400 hover:bg-gray-700 rounded-lg transition"
+                      >
+                        <FiEdit2 size={16} />
+                      </button>
+
+                      {/* زر الحذف */}
+                      <button 
+                        onClick={() => handleDelete(post.slug)}
+                        title="Delete"
+                        className="p-2 bg-gray-800 text-red-400 hover:bg-gray-700 rounded-lg transition"
+                      >
+                        <FiTrash2 size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}

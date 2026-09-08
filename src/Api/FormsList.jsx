@@ -1,13 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axiosClient from './axiosClient';
-import { FiPlus, FiEdit3, FiEye, FiTrash2, FiCopy } from 'react-icons/fi';
+import { FiPlus, FiEdit3, FiEye, FiTrash2, FiCopy, FiList } from 'react-icons/fi';
 
 const FormsList = () => {
   const navigate = useNavigate();
   const [forms, setForms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
+
+  // دالة مساعدة لطباعة القيم الآمنة (النصوص أو الكائنات التي تحوي ar/en)
+  const renderSafeValue = (val, fallback = '') => {
+    if (val === null || val === undefined) return fallback;
+    if (typeof val === 'object') {
+      return val.ar || val.en || JSON.stringify(val);
+    }
+    return String(val);
+  };
 
   // جلب النماذج من السيرفر
   const fetchForms = async () => {
@@ -100,29 +109,35 @@ const FormsList = () => {
             <tbody className="divide-y divide-gray-800/60 text-sm text-gray-300">
               {forms.map((form, idx) => (
                 <tr key={idx} className="hover:bg-gray-800/30 transition">
-                  <td className="p-4 font-medium text-white">{form.title || 'Untitled Form'}</td>
+                  {/* استخدام الدالة الآمنة لعنوان النموذج */}
+                  <td className="p-4 font-medium text-white">
+                    {renderSafeValue(form.title, 'Untitled Form')}
+                  </td>
                   <td className="p-4 text-gray-500 font-mono text-xs">{form.slug}</td>
                   <td className="p-4">
-                    <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-semibold ${form.status === 'Published' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}`}>
-                      {form.status || 'Draft'}
+                    <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-semibold ${renderSafeValue(form.status) === 'Published' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}`}>
+                      {renderSafeValue(form.status, 'Draft')}
                     </span>
                   </td>
                   <td className="p-4 text-right space-x-2">
-                    {/* زر الردود Submissions */}
+                    {/* زر الردود (Submissions) */}
                     <button
                       onClick={() => navigate(`/admin/forms/${form.slug}/submissions`)}
                       title="View Submissions"
                       className="p-2 bg-blue-500/10 text-blue-400 rounded-lg hover:bg-blue-500/20 transition inline-flex items-center cursor-pointer"
                     >
-                      <FiEye size={16} />
-                      <button 
-  title="Preview Form"
-  onClick={() => window.open(`/forms/${form.slug}`, '_blank')}
-  className="p-2 bg-gray-800 text-gray-300 hover:text-white rounded-lg transition"
->
-  <FiEye size={16} />
-</button>
+                      <FiList size={16} />
                     </button>
+
+                    {/* زر المعاينة (Preview) */}
+                    <button 
+                      title="Preview Form"
+                      onClick={() => window.open(`/forms/${form.slug}`, '_blank')}
+                      className="p-2 bg-gray-800 text-gray-300 hover:text-white rounded-lg transition inline-flex items-center cursor-pointer"
+                    >
+                      <FiEye size={16} />
+                    </button>
+
                     {/* زر التعديل */}
                     <button
                       onClick={() => navigate(`/admin/forms/edit/${form.slug}`)}
@@ -131,6 +146,7 @@ const FormsList = () => {
                     >
                       <FiEdit3 size={16} />
                     </button>
+
                     {/* زر التكرار Duplicate */}
                     <button
                       onClick={() => handleDuplicate(form.slug)}
@@ -139,6 +155,7 @@ const FormsList = () => {
                     >
                       <FiCopy size={16} />
                     </button>
+
                     {/* زر الحذف */}
                     <button
                       onClick={() => handleDelete(form.slug)}

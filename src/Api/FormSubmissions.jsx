@@ -14,7 +14,6 @@ const FormSubmissions = () => {
     const fetchSubmissions = async () => {
       try {
         const response = await axiosClient.get(`/admin/forms/${slug}/submissions`);
-        // بناءً على صورة الـ Postman الـ response يأتي بالشكل { form: 6, submissions: [...] }
         setSubmissionsData(response.data);
       } catch (error) {
         console.error('Error fetching submissions:', error);
@@ -28,7 +27,6 @@ const FormSubmissions = () => {
     }
   }, [slug]);
 
-  // تصدير الردود إلى ملف CSV
   const handleExportCSV = async () => {
     try {
       const response = await axiosClient.get(`/admin/forms/${slug}/submissions/export`, {
@@ -50,10 +48,18 @@ const FormSubmissions = () => {
 
   const submissions = submissionsData.submissions || [];
 
+  // دالة مساعدة آمنة لطباعة القيم سواء كانت نصوصاً أو كائنات مترجمة مثل {ar, en}
+  const renderSafeValue = (val) => {
+    if (val === null || val === undefined) return '';
+    if (typeof val === 'object') {
+      return val.ar || val.en || JSON.stringify(val);
+    }
+    return String(val);
+  };
+
   return (
     <div className="p-8 max-w-7xl mx-auto min-h-screen bg-[#0d1117] text-gray-100" dir="ltr">
       
-      {/* رأس الصفحة وأزرار التحكم */}
       <div className="flex justify-between items-center mb-8">
         <div>
           <div className="flex items-center space-x-2 text-xs text-gray-400 mb-1">
@@ -109,10 +115,14 @@ const FormSubmissions = () => {
                   <td className="p-4">
                     <div className="space-y-2">
                       {sub.answers && sub.answers.length > 0 ? (
-                        sub.answers.map((ans) => (
-                          <div key={ans.id} className="bg-[#0d1117] border border-gray-800 p-2.5 rounded-xl text-xs flex flex-col">
-                            <span className="text-[#ff7a00] font-semibold mb-0.5">{ans.field_name}:</span>
-                            <span className="text-gray-200">{ans.answer}</span>
+                        sub.answers.map((ans, aIdx) => (
+                          <div key={ans.id || aIdx} className="bg-[#0d1117] border border-gray-800 p-2.5 rounded-xl text-xs flex flex-col">
+                            <span className="text-[#ff7a00] font-semibold mb-0.5">
+                              {renderSafeValue(ans.field_name)}:
+                            </span>
+                            <span className="text-gray-200">
+                              {renderSafeValue(ans.answer)}
+                            </span>
                           </div>
                         ))
                       ) : (

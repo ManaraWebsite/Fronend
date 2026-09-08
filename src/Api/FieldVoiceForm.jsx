@@ -16,27 +16,39 @@ const FieldVoiceForm = () => {
   });
   const [loading, setLoading] = useState(false);
 
+  // جلب البيانات في حال كنا في وضع التعديل (Edit)
   useEffect(() => {
     if (isEditing) {
-      // جلب البيانات في حال التعديل
-      const fetchVoice = async () => {
+      const fetchVoiceDetails = async () => {
         try {
-          const response = await axiosClient.get('/admin/field-voices');
+          // جلب البيانات من الـ API (تأكدي من مسار الـ endpoint الخاص بجلب العنصر منفرداً أو من القائمة)
+          const response = await axiosClient.get(`/admin/field-voices`);
           const voices = response.data.data || response.data;
           const currentVoice = voices.find((v) => v.id.toString() === id);
+
           if (currentVoice) {
+            // التعامل مع الـ role والـ quote سواء كانت كائن (Object) أو نص عادي (String)
+            const roleValue = typeof currentVoice.role === 'object' 
+              ? currentVoice.role?.ar || currentVoice.role?.en || '' 
+              : currentVoice.role || '';
+
+            const quoteValue = typeof currentVoice.quote === 'object' 
+              ? currentVoice.quote?.ar || currentVoice.quote?.en || '' 
+              : currentVoice.quote || '';
+
             setFormData({
               name: currentVoice.name || '',
-              role: currentVoice.role || '',
-              quote: currentVoice.quote || '',
-              image: null,
+              role: roleValue,
+              quote: quoteValue,
+              image: null, // الصورة القديمة لا يتم وضعها في الـ input file لأسباب أمنية في المتصفح
             });
           }
         } catch (error) {
           console.error('Error fetching voice details:', error);
+          alert('Failed to load voice details for editing.');
         }
       };
-      fetchVoice();
+      fetchVoiceDetails();
     }
   }, [id, isEditing]);
 
@@ -56,18 +68,21 @@ const FieldVoiceForm = () => {
     data.append('name', formData.name);
     data.append('role', formData.role);
     data.append('quote', formData.quote);
+    data.append('is_published', '1');
+    
+    // إرسال الصورة فقط إذا قام المستخدم بتحديد صورة جديدة
     if (formData.image) {
       data.append('image', formData.image);
     }
 
     try {
       if (isEditing) {
-        // تحديث باستخدام POST و _method=PUT كما هو مطلوب في الـ API
+        // في حال التعديل (نستخدم POST مع ?_method=PUT كما ظهر في Postman لتعامل أفضل مع الملفات في لارافيل)
         await axiosClient.post(`/admin/field-voices/${id}?_method=PUT`, data, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
       } else {
-        // إضافة جديد
+        // في حال الإضافة الجديدة
         await axiosClient.post('/admin/field-voices', data, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
@@ -75,7 +90,7 @@ const FieldVoiceForm = () => {
       navigate('/admin/field-voices');
     } catch (error) {
       console.error('Error saving field voice:', error.response?.data || error);
-      alert('Failed to save data.');
+      alert(error.response?.data?.message || 'Failed to save data. Please check image size (< 255KB).');
     } finally {
       setLoading(false);
     }
@@ -88,7 +103,9 @@ const FieldVoiceForm = () => {
           <h1 className="text-2xl font-bold text-white">
             {isEditing ? 'Edit Field Voice' : 'Add New Field Voice'}
           </h1>
-          <p className="text-sm text-gray-400 mt-1">Fill out the details below.</p>
+          <p className="text-sm text-gray-400 mt-1">
+            {isEditing ? 'Update the details below.' : 'Fill out the details below.'}
+          </p>
         </div>
         <button
           onClick={() => navigate('/admin/field-voices')}
@@ -121,7 +138,7 @@ const FieldVoiceForm = () => {
             value={formData.role}
             onChange={handleChange}
             required
-            className="w-full bg-[#0d1117] border border-gray-800 rounded-xl p-3 text-white focus:border-[#ff7a00] focus:outline-none text-sm"
+            className="w-full bg-[#0d1117] border border-gray-800 rounded-xl p-3 text-white focus:border-[#ff7a00] focus:outline-0 text-sm"
             placeholder="Enter role..."
           />
         </div>
@@ -140,7 +157,9 @@ const FieldVoiceForm = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">Image</label>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            Image {isEditing ? '(Leave empty to keep current image)' : ''} - Max size: 255KB
+          </label>
           <input
             type="file"
             onChange={handleFileChange}
