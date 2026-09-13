@@ -7,6 +7,7 @@ import Contact from './Contact';
 import Footer from './Footer';
 import SuccessStories from './SuccessStories';
 import LatestPostsSection from './LatestPostsSection';
+import UserWorkshops from './UserWorkshops';
 
 const Home = () => {
   return (
@@ -14,10 +15,13 @@ const Home = () => {
       <Navbar />
       <HeroSection />
       <About />
-      <LatestPostsSection />
+      <UserWorkshops />
       <Services />
+      <LatestPostsSection />
       
-      <SuccessStories />
+      
+      
+      
       <Contact />
       <Footer />
     </div>

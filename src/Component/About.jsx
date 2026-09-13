@@ -1,5 +1,3 @@
-// About.jsx
-
 import React, { useContext } from 'react';
 import { LanguageContext } from '../LanguageContext';
 import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
@@ -40,7 +38,7 @@ function About() {
             transition={{ duration: 0.8 }}
             className={`space-y-6 ${isAr ? 'text-right' : 'text-left'}`}
           >
-            <h2 className="text-4xl font-bold text-[#1a1a2e] leading-snug">{t.aboutTitle}</h2>
+            <h2 className="text-4xl font-bold text-[#211551] leading-snug">{t.aboutTitle}</h2>
             <p className="text-gray-600 leading-relaxed text-lg">{t.aboutDesc}</p>
             
             {/* الإحصائيات */}
@@ -78,8 +76,9 @@ function About() {
               >
                 <div className="text-orange-500 text-3xl mt-1">{icons[index]}</div>
                 <div>
-                  <h4 className="font-bold text-xl">{point.title}</h4>
-                  <p className="text-gray-600 text-sm">{point.desc}</p>
+                  {/* تم تحديث لون العنوان ليطابق لون عناوين قسم الخدمات #211551 */}
+                  <h4 className="font-bold text-xl text-[#211551]">{point.title}</h4>
+                  <p className="text-gray-600 text-sm mt-1">{point.desc}</p>
                 </div>
               </motion.div>
             ))}

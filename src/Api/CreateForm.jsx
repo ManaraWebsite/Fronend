@@ -3,38 +3,57 @@ import axiosClient from './axiosClient';
 import { 
   FiType, FiFileText, FiMail, FiHash, FiPhone, 
   FiCalendar, FiChevronDown, FiCheckSquare, FiRadio, FiUpload, 
-  FiTrash2, FiArrowUp, FiArrowDown, FiCheck 
+  FiTrash2, FiArrowUp, FiArrowDown, FiCheck, FiImage 
 } from 'react-icons/fi';
 
 const CreateForm = () => {
-  const [title, setTitle] = useState(''); // تم إضافة حقل العنوان
-  const [slug, setSlug] = useState('untitled-form');
-  const [status, setStatus] = useState('Draft'); // Draft or Published
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [status, setStatus] = useState('Draft');
+  const [image, setImage] = useState(null);
+  
   const [fields, setFields] = useState([
-    { id: 1, type: 'text', label: 'Text', placeholder: '', helpText: '', required: false, minLength: '', maxLength: '' },
-    { id: 2, type: 'textarea', label: 'Textarea', placeholder: '', helpText: '', required: false },
-    { id: 3, type: 'email', label: 'Email', placeholder: '', helpText: '', required: false }
+    { id: 1, type: 'text', label: 'Full name', placeholder: '', helpText: '', required: true, options: null },
+    { id: 2, type: 'email', label: 'Email', placeholder: '', helpText: '', required: true, options: null },
+    { 
+      id: 3, 
+      type: 'select', 
+      label: 'University', 
+      placeholder: '', 
+      helpText: '', 
+      required: true, 
+      options: ['UCAS', 'Islamic University of Gaza', 'Palestine University', 'Other'] 
+    }
   ]);
+  
   const [selectedFieldIndex, setSelectedFieldIndex] = useState(0);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
-  // أنواع الحقول المتاحة للاضافة مع الأيقونات
   const fieldTypes = [
     { type: 'text', label: 'Text', icon: FiType },
     { type: 'textarea', label: 'Textarea', icon: FiFileText },
     { type: 'email', label: 'Email', icon: FiMail },
     { type: 'number', label: 'Number', icon: FiHash },
-    { type: 'phone', label: 'Phone', icon: FiPhone },
+    { type: 'tel', label: 'Phone', icon: FiPhone },
     { type: 'date', label: 'Date', icon: FiCalendar },
-    { type: 'dropdown', label: 'Dropdown', icon: FiChevronDown },
+    { type: 'select', label: 'Dropdown', icon: FiChevronDown },
     { type: 'checkbox', label: 'Checkbox', icon: FiCheckSquare },
     { type: 'radio', label: 'Radio', icon: FiRadio },
     { type: 'file', label: 'File Upload', icon: FiUpload },
   ];
 
-  // إضافة حقل جديد للقائمة
+  const generateSlug = (text) => {
+    return text
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/[\s_-]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'untitled-form-' + Date.now();
+  };
+
   const addField = (typeObj) => {
+    const needsOptions = ['select', 'radio', 'checkbox'].includes(typeObj.type);
     const newField = {
       id: Date.now(),
       type: typeObj.type,
@@ -42,12 +61,12 @@ const CreateForm = () => {
       placeholder: '',
       helpText: '',
       required: false,
+      options: needsOptions ? [''] : null,
     };
     setFields([...fields, newField]);
-    setSelectedFieldIndex(fields.length); // تحديد الحقل الجديد تلقائياً
+    setSelectedFieldIndex(fields.length);
   };
 
-  // حذف حقل
   const removeField = (index, e) => {
     e.stopPropagation();
     const updated = fields.filter((_, i) => i !== index);
@@ -57,7 +76,6 @@ const CreateForm = () => {
     }
   };
 
-  // تحريك الحقل للأعلى
   const moveUp = (index, e) => {
     e.stopPropagation();
     if (index === 0) return;
@@ -69,7 +87,6 @@ const CreateForm = () => {
     setSelectedFieldIndex(index - 1);
   };
 
-  // تحريك الحقل للأسفل
   const moveDown = (index, e) => {
     e.stopPropagation();
     if (index === fields.length - 1) return;
@@ -81,7 +98,6 @@ const CreateForm = () => {
     setSelectedFieldIndex(index + 1);
   };
 
-  // تحديث خصائص الحقل المحدد حالياً
   const updateSelectedField = (key, value) => {
     if (fields.length === 0) return;
     const updated = [...fields];
@@ -89,22 +105,50 @@ const CreateForm = () => {
     setFields(updated);
   };
 
-  // إرسال النموذج وحفظه للسيرفر
   const handleSubmit = async (formStatus) => {
     setLoading(true);
     setMessage('');
     try {
-      const payload = {
-        title: title || 'Untitled Form',
-        slug: slug,
-        status: formStatus,
-        fields: fields
-      };
-      await axiosClient.post('/admin/forms', payload);
+      const generatedSlug = generateSlug(title);
+      
+      const formData = new FormData();
+      formData.append('title', title || 'Untitled Form');
+      formData.append('description', description || '');
+      formData.append('slug', generatedSlug);
+      formData.append('is_active', formStatus === 'Published' ? 1 : 0);
+      
+      fields.forEach((field, index) => {
+        const cleanType = typeof field.type === 'string' ? field.type : 'text';
+        
+        formData.append(`fields[${index}][type]`, cleanType);
+        formData.append(`fields[${index}][label]`, field.label || '');
+        formData.append(`fields[${index}][is_required]`, field.required ? 1 : 0);
+        formData.append(`fields[${index}][order]`, index + 1);
+
+        // إرسال الخيارات بشكل صحيح بدون [ar]
+        if (field.options && Array.isArray(field.options)) {
+          field.options.forEach((opt, optIndex) => {
+            if (opt && opt.trim() !== '') {
+              formData.append(`fields[${index}][options][${optIndex}]`, opt);
+            }
+          });
+        }
+      });
+      
+      if (image) {
+        formData.append('image', image);
+      }
+
+      const response = await axiosClient.post('/admin/forms', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
       setMessage('تم إنشاء النموذج بنجاح!');
+      console.log('Success:', response.data);
     } catch (error) {
-      console.error(error);
-      setMessage('حدث خطأ أثناء حفظ النموذج، تأكد من البيانات.');
+      console.error('API Error Response:', error.response?.data);
+      const errorMsg = error.response?.data?.message || error.response?.data?.error || 'حدث خطأ أثناء حفظ النموذج، تأكد من البيانات.';
+      setMessage(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -114,7 +158,6 @@ const CreateForm = () => {
 
   return (
     <div className="p-8 max-w-7xl mx-auto min-h-screen bg-[#0d1117] text-gray-100" dir="ltr">
-      {/* رأس الصفحة والمبريد */}
       <div className="flex justify-between items-center mb-6 border-b border-gray-800 pb-4">
         <div>
           <span className="text-xs text-gray-400">Admin / Forms /</span>
@@ -130,12 +173,9 @@ const CreateForm = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        {/* القسم الأيسر: إعدادات النموذج العامة والحقول */}
         <div className="lg:col-span-2 space-y-6">
-          
-          {/* صندوق الـ Title والـ Slug والـ Status */}
-          <div className="bg-[#161b22] p-4 rounded-2xl shadow-xs border border-gray-800 grid grid-cols-3 gap-4">
-            <div>
+          <div className="bg-[#161b22] p-4 rounded-2xl shadow-xs border border-gray-800 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="sm:col-span-2">
               <label className="block text-xs font-semibold text-gray-400 uppercase mb-1">Title</label>
               <input 
                 type="text" 
@@ -145,15 +185,7 @@ const CreateForm = () => {
                 className="w-full bg-[#0d1117] border border-gray-800 rounded-xl p-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#ff7a00]"
               />
             </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-400 uppercase mb-1">Slug</label>
-              <input 
-                type="text" 
-                value={slug}
-                onChange={(e) => setSlug(e.target.value)}
-                className="w-full bg-[#0d1117] border border-gray-800 rounded-xl p-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#ff7a00]"
-              />
-            </div>
+
             <div>
               <label className="block text-xs font-semibold text-gray-400 uppercase mb-1">Status</label>
               <select 
@@ -165,9 +197,44 @@ const CreateForm = () => {
                 <option value="Published">Published</option>
               </select>
             </div>
+
+            <div className="sm:col-span-3">
+              <label className="block text-xs font-semibold text-gray-400 uppercase mb-1">Description</label>
+              <textarea 
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Form description..."
+                rows="2"
+                className="w-full bg-[#0d1117] border border-gray-800 rounded-xl p-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#ff7a00]"
+              />
+            </div>
+
+            <div className="sm:col-span-3">
+              <label className="block text-xs font-semibold text-gray-400 uppercase mb-1">Form Image</label>
+              <div className="flex items-center gap-3">
+                <label className="flex-1 flex items-center justify-center gap-2 p-2.5 bg-[#0d1117] border border-gray-800 rounded-xl text-sm text-gray-400 hover:border-[#ff7a00] hover:text-gray-200 transition cursor-pointer">
+                  <FiImage className="text-[#ff7a00]" />
+                  <span>{image ? image.name : 'Choose form image...'}</span>
+                  <input 
+                    type="file" 
+                    accept="image/*"
+                    onChange={(e) => setImage(e.target.files[0])}
+                    className="hidden"
+                  />
+                </label>
+                {image && (
+                  <button 
+                    type="button" 
+                    onClick={() => setImage(null)}
+                    className="px-3 py-2.5 bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl text-xs hover:bg-red-500/20 transition"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* صندوق إضافة حقل جديد (Add a Field) */}
           <div className="bg-[#161b22] p-6 rounded-2xl shadow-xs border border-gray-800">
             <h2 className="text-xs font-semibold text-gray-400 uppercase mb-4">Add a Field</h2>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
@@ -188,7 +255,6 @@ const CreateForm = () => {
             </div>
           </div>
 
-          {/* قائمة الحقول المُضافة (Fields List) */}
           <div className="bg-[#161b22] p-6 rounded-2xl shadow-xs border border-gray-800">
             <h2 className="text-xs font-semibold text-gray-400 uppercase mb-4">Fields ({fields.length})</h2>
             
@@ -202,13 +268,13 @@ const CreateForm = () => {
                     onClick={() => setSelectedFieldIndex(index)}
                     className={`flex items-center justify-between p-3.5 rounded-xl border cursor-pointer transition ${selectedFieldIndex === index ? 'border-[#ff7a00] bg-[#ff7a00]/10 ring-1 ring-[#ff7a00]' : 'border-gray-800 bg-[#0d1117] hover:bg-gray-800/50'}`}
                   >
-                    <div className="flex items-center space-x-3">
+                    <div className="flex items-center gap-3">
                       <span className="text-gray-600 cursor-grab">⋮⋮</span>
                       <span className="text-xs font-semibold px-2 py-1 bg-[#ff7a00]/20 text-[#ff7a00] rounded uppercase">{f.type}</span>
                       <span className="text-sm font-medium text-gray-200">{f.label || 'Untitled Field'}</span>
                     </div>
 
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-2">
                       <button type="button" onClick={(e) => moveUp(index, e)} className="p-1.5 text-gray-500 hover:text-gray-300 rounded">
                         <FiArrowUp size={14} />
                       </button>
@@ -224,10 +290,8 @@ const CreateForm = () => {
               </div>
             )}
           </div>
-
         </div>
 
-        {/* القسم الأيمن: إعدادات الحقل المحدد (Field Settings) */}
         <div className="bg-[#161b22] p-6 rounded-2xl shadow-xs border border-gray-800 h-fit space-y-4">
           <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Field Settings</h2>
           
@@ -271,6 +335,50 @@ const CreateForm = () => {
                 />
               </div>
 
+              {['select', 'radio', 'checkbox'].includes(selectedField.type) && (
+                <div className="space-y-2 pt-3 border-t border-gray-800">
+                  <label className="block text-xs font-semibold text-gray-400 uppercase">Options</label>
+                  {selectedField.options?.map((opt, optIndex) => (
+                    <div key={optIndex} className="flex items-center gap-2">
+                      <input 
+                        type="text" 
+                        value={opt}
+                        placeholder={`Option ${optIndex + 1}`}
+                        onChange={(e) => {
+                          const updatedFields = [...fields];
+                          updatedFields[selectedFieldIndex].options[optIndex] = e.target.value;
+                          setFields(updatedFields);
+                        }}
+                        className="w-full bg-[#0d1117] border border-gray-800 rounded-xl p-2.5 text-xs text-gray-200 focus:outline-none focus:border-[#ff7a00]"
+                      />
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          const updatedFields = [...fields];
+                          updatedFields[selectedFieldIndex].options = updatedFields[selectedFieldIndex].options.filter((_, i) => i !== optIndex);
+                          setFields(updatedFields);
+                        }}
+                        className="text-red-400 hover:text-red-300 text-xs px-2 py-1"
+                      >
+                        <FiTrash2 size={14} />
+                      </button>
+                    </div>
+                  ))}
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      const updatedFields = [...fields];
+                      if (!updatedFields[selectedFieldIndex].options) updatedFields[selectedFieldIndex].options = [];
+                      updatedFields[selectedFieldIndex].options.push('');
+                      setFields(updatedFields);
+                    }}
+                    className="text-xs text-[#ff7a00] hover:underline mt-1 block font-medium"
+                  >
+                    + Add Option
+                  </button>
+                </div>
+              )}
+
               <div className="flex items-center justify-between pt-2 border-t border-gray-800">
                 <span className="text-xs font-semibold text-gray-400">Required field</span>
                 <label className="relative inline-flex items-center cursor-pointer">
@@ -285,18 +393,15 @@ const CreateForm = () => {
               </div>
             </>
           )}
-
         </div>
-
       </div>
 
-      {/* أزرار الحفظ والنشر في الأسفل */}
-      <div className="flex justify-end items-center space-x-3 mt-8 pt-4 border-t border-gray-800">
+      <div className="flex justify-end items-center gap-3 mt-8 pt-4 border-t border-gray-800">
         <button 
           type="button" 
           onClick={() => handleSubmit('Draft')}
           disabled={loading}
-          className="px-5 py-2.5 bg-[#161b22] border border-gray-800 text-gray-300 rounded-xl text-sm font-semibold hover:bg-gray-800 transition shadow-xs"
+          className="px-5 py-2.5 bg-[#161b22] border border-gray-800 text-gray-300 rounded-xl text-sm font-semibold hover:bg-gray-800 transition shadow-xs cursor-pointer"
         >
           Save as Draft
         </button>
@@ -304,13 +409,12 @@ const CreateForm = () => {
           type="button" 
           onClick={() => handleSubmit('Published')}
           disabled={loading}
-          className="px-5 py-2.5 bg-[#ff7a00] text-white rounded-xl text-sm font-semibold hover:bg-[#e06c00] transition shadow-sm flex items-center space-x-2"
+          className="px-5 py-2.5 bg-[#ff7a00] text-white rounded-xl text-sm font-semibold hover:bg-[#e06c00] transition shadow-sm flex items-center gap-2 cursor-pointer"
         >
           <FiCheck />
           <span>Publish</span>
         </button>
       </div>
-
     </div>
   );
 };

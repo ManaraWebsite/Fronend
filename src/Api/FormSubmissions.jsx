@@ -48,7 +48,6 @@ const FormSubmissions = () => {
 
   const submissions = submissionsData.submissions || [];
 
-  // دالة مساعدة آمنة لطباعة القيم سواء كانت نصوصاً أو كائنات مترجمة مثل {ar, en}
   const renderSafeValue = (val) => {
     if (val === null || val === undefined) return '';
     if (typeof val === 'object') {

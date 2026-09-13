@@ -27,7 +27,6 @@ function LatestPostsSection() {
     fetchLatestPosts();
   }, []);
 
-  // الدالة المحسنة لإنشاء رابط الصورة بناءً على إعدادات الـ axiosClient
   const getImageUrl = (post) => {
     const rawImage = post.cover_image || post.image || post.image_url;
     const fallbackImage = 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=600&q=80';
@@ -35,7 +34,6 @@ function LatestPostsSection() {
     if (!rawImage) return fallbackImage;
     if (typeof rawImage === 'string' && rawImage.startsWith('http')) return rawImage;
 
-    // استخراج الدومين الأساسي من الـ axiosClient وإزالة /api إن وجدت للحصول على رابط الـ storage السليم
     const baseServerUrl = axiosClient.defaults.baseURL 
       ? axiosClient.defaults.baseURL.replace(/\/api\/?$/, '') 
       : 'http://43.156.53.131';
@@ -46,27 +44,26 @@ function LatestPostsSection() {
   };
 
   return (
-    <section id='blog' className="relative py-24 bg-[#1a1a2e] overflow-hidden">
-      
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-orange-600/5 rounded-full blur-[150px] -z-0"></div>
-
-      <div className="container mx-auto px-6 md:px-12 z-10 relative">
+    <section id='blog' className="py-24 bg-[#1a1a2e]">
+      <div className="container mx-auto px-6 md:px-10">
         
-        <div className="text-center max-w-2xl mx-auto mb-16">
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
-            <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">
-              {isAr ? 'أحدث المنشورات والمقالات' : 'Latest Posts & Articles'}
-            </h2>
-            <p className="text-gray-300 text-base md:text-lg">
-              {isAr ? 'تابع آخر الأخبار، النصائح الإدارية، والتحديثات التقنية لدينا' : 'Follow our latest news, management tips, and technical updates'}
-            </p>
-          </motion.div>
-        </div>
+        {/* Title */}
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: .8 }}
+          className="text-center mb-16"
+        >
+          <div className="w-16 h-1 bg-orange-500 mx-auto mb-5 rounded-full"></div>
+
+          <h2 className="text-4xl font-bold text-white">
+            {isAr ? 'أحدث المنشورات والمقالات' : 'Latest Posts & Articles'}
+          </h2>
+
+          <p className="text-gray-300 mt-5 max-w-3xl mx-auto">
+            {isAr ? 'تابع آخر الأخبار، النصائح الإدارية، والتحديثات التقنية لدينا' : 'Follow our latest news, management tips, and technical updates'}
+          </p>
+        </motion.div>
 
         {loading ? (
           <div className="text-center py-12 text-gray-400">
@@ -77,7 +74,7 @@ function LatestPostsSection() {
             {isAr ? 'لا توجد منشورات متاحة حالياً.' : 'No posts available at the moment.'}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {posts.slice(0, 3).map((post, index) => {
               const title = typeof post.title === 'object' 
                 ? (isAr ? post.title?.ar || post.title?.en : post.title?.en || post.title?.ar)
@@ -102,13 +99,19 @@ function LatestPostsSection() {
               return (
                 <motion.div
                   key={post.id || post.slug}
-                  initial={{ opacity: 0, y: 50 }}
+                  initial={{ opacity: 0, y: 80 }}
                   whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.2 }}
-                  className="bg-[#23233c] rounded-2xl overflow-hidden border border-orange-500/10 hover:border-orange-500/40 transition-all duration-300 flex flex-col group shadow-lg"
+                  transition={{
+                    duration: .6,
+                    delay: index * .2,
+                  }}
+                  whileHover={{
+                    y: -10,
+                    scale: 1.03,
+                  }}
+                  className="bg-[#23233c] rounded-3xl overflow-hidden border border-orange-500/10 hover:border-orange-300 transition-all duration-300 flex flex-col group shadow-lg"
                 >
-                  <div className="relative overflow-hidden h-48 bg-gray-800">
+                  <div className="relative overflow-hidden h-52 bg-gray-800">
                     <img 
                       src={imageUrl} 
                       alt={title || 'Post image'} 
@@ -123,14 +126,14 @@ function LatestPostsSection() {
                     </span>
                   </div>
 
-                  <div className="p-6 flex flex-col flex-grow">
-                    <span className="text-gray-400 text-xs mb-2 block">{postDate}</span>
+                  <div className="p-8 flex flex-col flex-grow text-start" style={{ textAlign: isAr ? 'right' : 'left' }}>
+                    <span className="text-gray-400 text-xs mb-3 block">{postDate}</span>
                     
-                    <h3 className="text-xl font-bold text-white mb-3 group-hover:text-orange-400 transition-colors line-clamp-2">
+                    <h3 className="text-2xl font-bold text-white mb-5 group-hover:text-orange-400 transition-colors line-clamp-2">
                       {title}
                     </h3>
                     
-                    <p className="text-gray-300 text-sm mb-6 line-clamp-3 leading-relaxed">
+                    <p className="text-gray-300 leading-8 text-sm mb-6 line-clamp-3">
                       {desc}
                     </p>
 
@@ -140,7 +143,6 @@ function LatestPostsSection() {
                         className="text-orange-400 font-semibold text-sm hover:text-orange-300 inline-flex items-center gap-2 transition-colors"
                       >
                         {isAr ? 'اقرأ المزيد' : 'Read More'}
-                        <span className={`transform ${isAr ? 'rotate-180' : ''}`}>←</span>
                       </a>
                     </div>
                   </div>

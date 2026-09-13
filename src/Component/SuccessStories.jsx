@@ -1,4 +1,4 @@
-// SuccessStories.jsx (محدث ليدعم اتجاه اللغة ديناميكياً)
+// SuccessStories.jsx (محدث ليبقى ثابتاً من اليسار لليمين مع اتجاه نصوص صحيح)
 
 import React, { useState, useEffect, useContext } from 'react';
 import { LanguageContext } from '../LanguageContext';
@@ -64,7 +64,7 @@ function SuccessStories() {
   }
 
   return (
-    <section id="stories" className="py-20 bg-[#0b0c16] text-white overflow-hidden" dir={isAr ? 'rtl' : 'ltr'}>
+    <section id="stories" className="py-20 bg-[#0b0c16] text-white overflow-hidden" dir="ltr">
       <div className="container mx-auto px-6 md:px-10">
         
         <div className="text-center mb-16 space-y-3">
@@ -94,8 +94,8 @@ function SuccessStories() {
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 className="relative bg-[#16182e]/60 border border-gray-800/80 p-8 rounded-[2rem] flex flex-col justify-between backdrop-blur-sm hover:border-orange-500/50 transition-all group"
               >
-                {/* رقم القصة يعكس مكانه تلقائياً حسب اتجاه الصفحة */}
-                <span className={`absolute top-6 ${isAr ? 'left-6' : 'right-6'} text-4xl font-black text-gray-700/30 select-none group-hover:text-orange-500/20 transition-colors`}>
+                {/* رقم القصة يثبت في اليمين دائماً أو اليسار حسب الرغبة، هنا جعلناه يثبت في اليمين (أو يتكيف مع اللغة باستخدام اليمين دائماً لثبات الشكل) */}
+                <span className="absolute top-6 right-6 text-4xl font-black text-gray-700/30 select-none group-hover:text-orange-500/20 transition-colors">
                   {storyNumber}
                 </span>
 

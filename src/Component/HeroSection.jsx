@@ -18,17 +18,27 @@ function HeroSection() {
         
         <div className={`flex flex-col md:flex-row ${isAr ? '' : 'md:flex-row-reverse'} items-center justify-between gap-12`}>
           
-          {/* قسم الصورة */}
+          {/* قسم الصورة مع تطبيق الحركة على الـ img نفسها */}
           <motion.div
             initial={{ x: isAr ? -100 : 100, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             transition={{ duration: 1, ease: "easeOut" }}
             className="flex-1 w-full flex justify-center"
           >
-            <img 
+            <motion.img 
               src="Hero.png" 
               alt="Manara" 
               className="w-[380px] md:w-[480px] max-w-full drop-shadow-2xl scale-x-[-1]" 
+              // حركة الطفو والالتفاف الهادئة والمستمرة للصورة
+              animate={{ 
+                y: [0, -12, 0], 
+                rotate: [0, 1.5, -1.5, 0] 
+              }}
+              transition={{ 
+                duration: 5, 
+                repeat: Infinity, 
+                ease: "easeInOut" 
+              }}
             />
           </motion.div>
 
