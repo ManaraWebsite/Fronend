@@ -1,8 +1,6 @@
-// Contact.jsx
-
 import React, { useContext, useState, useEffect } from 'react';
 import { LanguageContext } from '../LanguageContext';
-import { FiMapPin, FiMail, FiPhone, FiSend } from 'react-icons/fi';
+import { FiMapPin, FiMail, FiPhone } from 'react-icons/fi';
 import { FaLinkedinIn, FaXTwitter, FaFacebookF, FaInstagram } from 'react-icons/fa6';
 import { motion } from 'framer-motion';
 
@@ -24,7 +22,7 @@ function Contact() {
     }
   }, [successMessage, errorMessage]);
 
-const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
     setSuccessMessage(false);
@@ -33,7 +31,6 @@ const handleSubmit = async (e) => {
     const formData = new FormData(e.target);
 
     try {
-      // تم استبدال الخطأ بـ fetch وتصحيحه هنا 👇
       const response = await fetch("https://formsubmit.co/ajax/manara.gaza.pal@gmail.com", {
         method: "POST",
         body: formData,
@@ -57,6 +54,7 @@ const handleSubmit = async (e) => {
     <section id='contact' className="py-24 bg-gray-50/50 overflow-hidden">
       <div className="container mx-auto px-6 grid md:grid-cols-12 gap-12 items-start">
         
+        {/* نموذج الإرسال */}
         <motion.div 
           initial={{ opacity: 0, x: isAr ? 50 : -50 }}
           whileInView={{ opacity: 1, x: 0 }}
@@ -123,9 +121,8 @@ const handleSubmit = async (e) => {
             <button 
               type="submit" 
               disabled={submitting}
-              className="bg-[#f97316] text-white px-8 py-3.5 rounded-xl font-semibold hover:bg-[#ea580c] shadow-md shadow-orange-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 text-sm"
+              className="w-full md:w-auto bg-[#f97316] text-white px-10 py-3.5 rounded-xl font-semibold hover:bg-[#ea580c] shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center disabled:opacity-50 text-sm"
             >
-              <FiSend className={isAr ? 'rotate-180' : ''} />
               {submitting ? (isAr ? 'جاري الإرسال...' : 'Sending...') : (t.sendBtn || (isAr ? 'إرسال' : 'Send'))}
             </button>
 
@@ -143,7 +140,7 @@ const handleSubmit = async (e) => {
           </form>
         </motion.div>
 
-        {/* 2. قسم معلومات التواصل (تتحرك الصناديق بتسلسل حركي Staggered Animation) */}
+        {/* قسم معلومات التواصل */}
         <motion.div 
           initial="hidden"
           whileInView="visible"
@@ -163,11 +160,11 @@ const handleSubmit = async (e) => {
           
           <motion.div 
             variants={{ hidden: { opacity: 0, x: isAr ? -30 : 30 }, visible: { opacity: 1, x: 0 } }}
-            className={`flex items-center gap-2 mb-2 ${isAr ? 'flex-row-reverse' : 'flex-row'}`}
+            className={`flex items-center gap-2 mb-2 ${isAr ? 'flex-row' : 'flex-row'}`}
           >
             <span className="w-2.5 h-2.5 rounded-full bg-[#f97316]"></span>
             <h2 className="text-lg font-bold text-[#211551]">
-              {t.contactTitle || (isAr ? 'تواصل معنا' : 'Get in touch')}
+              {t.contactTitle || (isAr ? 'ابق على اتصال بنبضنا' : 'Get in touch')}
             </h2>
           </motion.div>
 
@@ -225,17 +222,17 @@ const handleSubmit = async (e) => {
             <span className="text-xs font-bold text-[#211551]">
               {isAr ? 'تابعنا على' : 'Follow us on'}
             </span>
-            <div className="flex gap-2">
-              <a href="https://www.facebook.com/profile.php?id=61591327107257" target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-xl bg-gray-50 text-gray-600 flex items-center justify-center hover:bg-[#211551] hover:text-white transition-all shadow-sm">
+            <div className={`flex gap-2 ${isAr ? 'flex-row-reverse' : 'flex-row'}`}>
+              <a href="https://www.facebook.com/profile.php?id=61591327107257" target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-xl bg-gray-50 text-gray-600 flex items-center justify-center hover:bg-[#f97316] hover:text-white transition-all shadow-sm">
                 <FaFacebookF className="text-xs" />
               </a>
-              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-xl bg-gray-50 text-gray-600 flex items-center justify-center hover:bg-[#211551] hover:text-white transition-all shadow-sm">
+              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-xl bg-gray-50 text-gray-600 flex items-center justify-center hover:bg-[#f97316] hover:text-white transition-all shadow-sm">
                 <FaXTwitter className="text-xs" />
               </a>
-              <a href="https://www.linkedin.com/company/manara03/posts/?feedView=all" target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-xl bg-gray-50 text-gray-600 flex items-center justify-center hover:bg-[#211551] hover:text-white transition-all shadow-sm">
+              <a href="https://www.linkedin.com/company/manara03/posts/?feedView=all" target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-xl bg-gray-50 text-gray-600 flex items-center justify-center hover:bg-[#f97316] hover:text-white transition-all shadow-sm">
                 <FaLinkedinIn className="text-xs" />
               </a>
-              <a href="https://www.instagram.com/manara.pal/" target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-xl bg-gray-50 text-gray-600 flex items-center justify-center hover:bg-[#211551] hover:text-white transition-all shadow-sm">
+              <a href="https://www.instagram.com/manara.pal/" target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-xl bg-gray-50 text-gray-600 flex items-center justify-center hover:bg-[#f97316] hover:text-white transition-all shadow-sm">
                 <FaInstagram className="text-xs" />
               </a>
             </div>

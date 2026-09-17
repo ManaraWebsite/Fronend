@@ -44,7 +44,7 @@ function LatestPostsSection() {
   };
 
   return (
-    <section id='blog' className="py-24 bg-[#1a1a2e]">
+    <section id='posts' className="py-24 bg-[#1a1a2e]">
       <div className="container mx-auto px-6 md:px-10">
         
         {/* Title */}
