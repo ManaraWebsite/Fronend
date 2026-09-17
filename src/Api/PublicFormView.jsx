@@ -82,7 +82,15 @@ const PublicFormView = () => {
     try {
       const dataToSend = new FormData();
       Object.keys(formData).forEach((fieldId) => {
-        dataToSend.append(`answers[${fieldId}]`, formData[fieldId]);
+        const value = formData[fieldId];
+        // إذا كان الحقل مصفوفة (مثل Checkbox)، نقوم بمعالجتها أو إرسالها بالشكل المناسب
+        if (Array.isArray(value)) {
+          value.forEach((item) => {
+            dataToSend.append(`answers[${fieldId}][]`, item);
+          });
+        } else {
+          dataToSend.append(`answers[${fieldId}]`, value);
+        }
       });
 
       await axiosClient.post(`/forms/${slug}/submit`, dataToSend, {
@@ -154,7 +162,7 @@ const PublicFormView = () => {
     <div className="min-h-screen bg-gray-50/50 text-gray-800 py-0 px-0 sm:px-4 sm:py-4 text-xs sm:text-sm" dir={direction}>
       <div className="max-w-4xl mx-auto bg-white border-0 sm:border border-gray-100 rounded-none sm:rounded-2xl overflow-hidden shadow-none sm:shadow-lg sm:shadow-gray-200/50">
         
-        {/* صورة الغلاف - تم تصغير الارتفاع */}
+        {/* صورة الغلاف */}
         {form?.image && (
           <div className="w-full h-48 sm:h-64 overflow-hidden border-b border-gray-100 bg-gray-50">
             <img 
@@ -241,6 +249,58 @@ const PublicFormView = () => {
                             );
                           })}
                         </select>
+                      )}
+
+                      {/* Checkbox Options */}
+                      {field.type === 'checkbox' && (
+                        <div className="space-y-2 pt-1">
+                          {Array.isArray(field.options) && field.options.map((opt, optIndex) => {
+                            const optVal = typeof opt === 'object' && opt !== null ? (opt.ar || opt.en || JSON.stringify(opt)) : opt;
+                            const currentValues = Array.isArray(formData[fieldKey]) ? formData[fieldKey] : [];
+                            
+                            return (
+                              <label key={optIndex} className="flex items-center gap-2.5 text-xs sm:text-sm text-gray-700 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  value={optVal}
+                                  checked={currentValues.includes(optVal)}
+                                  onChange={(e) => {
+                                    const updatedValues = e.target.checked
+                                      ? [...currentValues, optVal]
+                                      : currentValues.filter((v) => v !== optVal);
+                                    handleChange(fieldKey, updatedValues);
+                                  }}
+                                  className="w-4 h-4 rounded border-gray-300 text-[#f97316] focus:ring-[#f97316]"
+                                />
+                                <span>{optVal}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Radio Options */}
+                      {field.type === 'radio' && (
+                        <div className="space-y-2 pt-1">
+                          {Array.isArray(field.options) && field.options.map((opt, optIndex) => {
+                            const optVal = typeof opt === 'object' && opt !== null ? (opt.ar || opt.en || JSON.stringify(opt)) : opt;
+                            
+                            return (
+                              <label key={optIndex} className="flex items-center gap-2.5 text-xs sm:text-sm text-gray-700 cursor-pointer">
+                                <input
+                                  type="radio"
+                                  name={`field-${fieldKey}`}
+                                  required={field.required}
+                                  value={optVal}
+                                  checked={formData[fieldKey] === optVal}
+                                  onChange={(e) => handleChange(fieldKey, e.target.value)}
+                                  className="w-4 h-4 border-gray-300 text-[#f97316] focus:ring-[#f97316]"
+                                />
+                                <span>{optVal}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
                       )}
 
                       {/* File Upload */}

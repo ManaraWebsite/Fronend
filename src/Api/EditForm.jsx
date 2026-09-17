@@ -73,7 +73,6 @@ export function EditForm() {
           setImagePreview(formData.image_url || formData.image);
         }
 
-        // معالجة الحقول والـ options بنفس هيكلية CreateForm تماماً
         const processedFields = (formData.fields || []).map((f, index) => ({
           id: f.id || Date.now() + index,
           type: getSafeString(f.type) === 'tel' ? 'text' : (getSafeString(f.type) || 'text'),
@@ -154,7 +153,6 @@ export function EditForm() {
     setFields(fields.map(f => f.id === selectedFieldId ? { ...f, [key]: value } : f));
   };
 
-  // تحديث النموذج وإرساله بالطريقة الصحيحة (Multipart FormData) متطابقة مع CreateForm
   const handleUpdate = async (targetStatus) => {
     setSubmitting(true);
     setMessage('');
@@ -192,7 +190,6 @@ export function EditForm() {
         formData.append('image', image);
       }
 
-      // دعم بعض الـ Backends التي تتطلب _method لعكس طلب الـ PUT مع الـ FormData
       formData.append('_method', 'PUT');
 
       await axiosClient.post(`/admin/forms/${slug}`, formData, {
@@ -272,15 +269,41 @@ export function EditForm() {
               <p className="text-xs text-gray-500 italic py-3">No fields added yet.</p>
             ) : (
               fields.map((field) => (
-                <div key={field.id} className="space-y-1">
+                <div key={field.id} className="space-y-1.5">
                   <label className="block text-xs font-medium text-gray-300">
                     {field.label} {field.required && <span className="text-red-500">*</span>}
                   </label>
+                  
                   {field.type === 'select' ? (
                     <select className="w-full bg-[#0d1117] border border-gray-800 rounded-xl p-2.5 text-sm text-gray-400 focus:outline-none">
                       <option>اختر من القائمة...</option>
                       {field.options?.map((opt, i) => <option key={i}>{opt}</option>)}
                     </select>
+                  ) : field.type === 'checkbox' ? (
+                    <div className="space-y-2 pt-1">
+                      {field.options?.map((opt, i) => (
+                        <label key={i} className="flex items-center gap-2.5 text-sm text-gray-300 cursor-pointer">
+                          <input type="checkbox" disabled className="w-4 h-4 rounded bg-[#0d1117] border-gray-800 text-[#ff7a00]" />
+                          <span>{opt || `Option ${i + 1}`}</span>
+                        </label>
+                      ))}
+                    </div>
+                  ) : field.type === 'radio' ? (
+                    <div className="space-y-2 pt-1">
+                      {field.options?.map((opt, i) => (
+                        <label key={i} className="flex items-center gap-2.5 text-sm text-gray-300 cursor-pointer">
+                          <input type="radio" disabled name={`radio-${field.id}`} className="w-4 h-4 bg-[#0d1117] border-gray-800 text-[#ff7a00]" />
+                          <span>{opt || `Option ${i + 1}`}</span>
+                        </label>
+                      ))}
+                    </div>
+                  ) : field.type === 'textarea' ? (
+                    <textarea 
+                      placeholder={field.placeholder || ''} 
+                      disabled 
+                      rows="3"
+                      className="w-full bg-[#0d1117] border border-gray-800 rounded-xl p-2.5 text-sm text-gray-500 cursor-not-allowed"
+                    />
                   ) : (
                     <input 
                       type={field.type} 
@@ -288,6 +311,9 @@ export function EditForm() {
                       disabled 
                       className="w-full bg-[#0d1117] border border-gray-800 rounded-xl p-2.5 text-sm text-gray-500 cursor-not-allowed"
                     />
+                  )}
+                  {field.helpText && (
+                    <p className="text-[11px] text-gray-500">{field.helpText}</p>
                   )}
                 </div>
               ))

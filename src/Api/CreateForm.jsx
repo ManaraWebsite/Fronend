@@ -76,7 +76,7 @@ const CreateForm = () => {
       placeholder: '',
       helpText: '',
       required: false,
-      options: needsOptions ? [''] : null,
+      options: needsOptions ? ['Option 1'] : null,
     };
     setFields([...fields, newField]);
     setSelectedFieldId(newField.id);
@@ -212,15 +212,41 @@ const CreateForm = () => {
               <p className="text-xs text-gray-500 italic py-3">No fields added yet.</p>
             ) : (
               fields.map((field) => (
-                <div key={field.id} className="space-y-1">
+                <div key={field.id} className="space-y-1.5">
                   <label className="block text-xs font-medium text-gray-300">
                     {field.label} {field.required && <span className="text-red-500">*</span>}
                   </label>
+                  
                   {field.type === 'select' ? (
                     <select className="w-full bg-[#0d1117] border border-gray-800 rounded-xl p-2.5 text-sm text-gray-400 focus:outline-none">
                       <option>اختر من القائمة...</option>
                       {field.options?.map((opt, i) => <option key={i}>{opt}</option>)}
                     </select>
+                  ) : field.type === 'checkbox' ? (
+                    <div className="space-y-2 pt-1">
+                      {field.options?.map((opt, i) => (
+                        <label key={i} className="flex items-center gap-2.5 text-sm text-gray-300 cursor-pointer">
+                          <input type="checkbox" disabled className="w-4 h-4 rounded bg-[#0d1117] border-gray-800 text-[#ff7a00]" />
+                          <span>{opt || `Option ${i + 1}`}</span>
+                        </label>
+                      ))}
+                    </div>
+                  ) : field.type === 'radio' ? (
+                    <div className="space-y-2 pt-1">
+                      {field.options?.map((opt, i) => (
+                        <label key={i} className="flex items-center gap-2.5 text-sm text-gray-300 cursor-pointer">
+                          <input type="radio" disabled name={`radio-${field.id}`} className="w-4 h-4 bg-[#0d1117] border-gray-800 text-[#ff7a00]" />
+                          <span>{opt || `Option ${i + 1}`}</span>
+                        </label>
+                      ))}
+                    </div>
+                  ) : field.type === 'textarea' ? (
+                    <textarea 
+                      placeholder={field.placeholder || ''} 
+                      disabled 
+                      rows="3"
+                      className="w-full bg-[#0d1117] border border-gray-800 rounded-xl p-2.5 text-sm text-gray-500 cursor-not-allowed"
+                    />
                   ) : (
                     <input 
                       type={field.type} 
@@ -228,6 +254,9 @@ const CreateForm = () => {
                       disabled 
                       className="w-full bg-[#0d1117] border border-gray-800 rounded-xl p-2.5 text-sm text-gray-500 cursor-not-allowed"
                     />
+                  )}
+                  {field.helpText && (
+                    <p className="text-[11px] text-gray-500">{field.helpText}</p>
                   )}
                 </div>
               ))
@@ -412,7 +441,7 @@ const CreateForm = () => {
                           const updatedOptions = selectedField.options.filter((_, i) => i !== optIndex);
                           updateSelectedField('options', updatedOptions);
                         }}
-                        className="text-red-400 hover:text-red-300 text-xs px-2 py-1"
+                        className="text-red-400 hover:text-red-300 text-xs px-2 py-1 cursor-pointer"
                       >
                         <FiTrash2 size={14} />
                       </button>
