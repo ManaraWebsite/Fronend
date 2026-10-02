@@ -1,7 +1,7 @@
 // AdminLogin.jsx
 
 import React, { useState } from 'react';
-import axiosClient from '../api/axiosClient';
+import axiosClient from './axiosClient';
 import { FiLock, FiMail } from 'react-icons/fi';
 
 function AdminLogin() {
