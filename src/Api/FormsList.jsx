@@ -21,7 +21,14 @@ const FormsList = () => {
   const fetchForms = async () => {
     try {
       const response = await axiosClient.get('/admin/forms');
-      setForms(response.data.data || response.data);
+      const allForms = response.data.data || response.data;
+      
+      // فلترة البيانات لتجاهل أي نموذج فارغ أو لا يمتلك slug صالح لمنع أي أخطاء في العرض أو الحذف
+      const validForms = Array.isArray(allForms) 
+        ? allForms.filter(form => form && form.slug && form.slug.trim() !== '') 
+        : [];
+        
+      setForms(validForms);
     } catch (error) {
       console.error('Error fetching forms:', error);
     } finally {
@@ -34,6 +41,11 @@ const FormsList = () => {
   }, []);
 
   const handleDelete = async (slug) => {
+    if (!slug) {
+      setMessage('Error: Invalid form slug.');
+      return;
+    }
+
     if (!window.confirm('Are you sure you want to delete this form?')) return;
     try {
       await axiosClient.delete(`/admin/forms/${slug}`);

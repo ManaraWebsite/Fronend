@@ -18,9 +18,24 @@ const UserWorkshops = () => {
         const response = await axiosClient.get('/admin/forms');
         const data = response.data.data || response.data;
         
-        // تصفية النماذج لعرض المنشورة فقط (is_active === true)
+        // تصفية صارمة: المنشورة حصراً، والتي تمتلك slug صحيح، والأهم أنها تمتلك عنواناً حقيقياً غير فارغ
         const activeForms = Array.isArray(data) 
-          ? data.filter(form => form.is_active === true || form.is_active === 1) 
+          ? data.filter(form => {
+              const isPublished = form.is_active === true || form.is_active === 1;
+              const hasSlug = form.slug && typeof form.slug === 'string' && form.slug.trim() !== '';
+              
+              // التحقق من وجود العنوان سواء كان نصاً عادياً أو كائناً يحتوي على ar أو en
+              const titleValue = form.title;
+              const hasTitle = titleValue && (
+                (typeof titleValue === 'string' && titleValue.trim() !== '') ||
+                (typeof titleValue === 'object' && (
+                  (titleValue.ar && titleValue.ar.trim() !== '') || 
+                  (titleValue.en && titleValue.en.trim() !== '')
+                ))
+              );
+
+              return isPublished && hasSlug && hasTitle;
+            }) 
           : [];
 
         setForms(activeForms);
@@ -65,7 +80,7 @@ const UserWorkshops = () => {
           <div className="text-center py-12 text-gray-400">
             {isAr ? 'جاري تحميل الورش والدورات...' : 'Loading workshops...'}
           </div>
-        ) : (
+        ) : forms.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" dir="ltr">
             {forms.map((form) => {
               const title = typeof form.title === 'object'
@@ -125,9 +140,7 @@ const UserWorkshops = () => {
               );
             })}
           </div>
-        )}
-
-        {forms.length === 0 && !loading && !errorMessage && (
+        ) : (
           <div className="text-center text-gray-400 py-12 text-sm" dir={isAr ? 'rtl' : 'ltr'}>
             {isAr ? 'لا توجد ورش أو دورات منشورة للتسجيل في الوقت الحالي.' : 'No published workshops available for registration at the moment.'}
           </div>

@@ -31,7 +31,6 @@ const PublicFormView = () => {
         const data = response.data.data || response.data;
         setForm(data);
 
-        // الفحص الذكي: إذا وجدنا حروف عربية في العنوان أو الوصف، نجعل الاتجاه RTL فوراً
         const titleText = renderSafeValue(data?.title);
         const descText = renderSafeValue(data?.description);
         const combinedText = titleText + " " + descText;
@@ -83,7 +82,6 @@ const PublicFormView = () => {
       const dataToSend = new FormData();
       Object.keys(formData).forEach((fieldId) => {
         const value = formData[fieldId];
-        // إذا كان الحقل مصفوفة (مثل Checkbox)، نقوم بمعالجتها أو إرسالها بالشكل المناسب
         if (Array.isArray(value)) {
           value.forEach((item) => {
             dataToSend.append(`answers[${fieldId}][]`, item);
