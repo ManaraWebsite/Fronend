@@ -1,14 +1,14 @@
 import axios from 'axios';
 
 const axiosClient = axios.create({
-  baseURL: 'http://43.156.53.131/api',
+  baseURL: import.meta.env.VITE_API_URL || 'http://43.156.53.131/api',
 });
 
 axiosClient.interceptors.request.use((config) => {
   const token = localStorage.getItem('admin_token') || localStorage.getItem('adminToken');
 
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    config.headers.Authorization = `Bearer `+token;
   }
 
   if (config.data instanceof FormData) {
