@@ -3,7 +3,7 @@ import { LanguageContext } from '../LanguageContext';
 import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
 import { FiTarget, FiCpu, FiTool } from 'react-icons/fi';
 
-// مكون عداد الأرقام المحدث: يعد، ينتظر، ثم يعيد العد
+// مكون عداد الأرقام المحدث: يعد مرة واحدة فقط ويتوقف
 function Counter({ from, to }) {
   const count = useMotionValue(from);
   const rounded = useTransform(count, (latest) => Math.round(latest));
@@ -11,8 +11,6 @@ function Counter({ from, to }) {
   React.useEffect(() => {
     const controls = animate(count, to, { 
       duration: 2,
-      repeat: Infinity,      // تكرار العد
-      repeatDelay: 1,        // الانتظار قبل إعادة العد
       ease: "easeInOut"
     });
     return () => controls.stop();
@@ -27,7 +25,7 @@ function About() {
   const isAr = lang === 'AR';
 
   return (
-    <section id='about' className="py-20 bg-white overflow-hidden" dir={isAr ? 'rtl' : 'ltr'}>
+    <section id='about' className="py-40 bg-white overflow-hidden" dir={isAr ? 'rtl' : 'ltr'}>
       <div className="container mx-auto px-6 md:px-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
           

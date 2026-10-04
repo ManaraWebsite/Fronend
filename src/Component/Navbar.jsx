@@ -14,8 +14,9 @@ function Navbar() {
     { id: 'home', label: isAr ? 'الرئيسية' : (t.home || 'Home') },
         { id: 'about', label: isAr ? 'من نحن' : (t.about || 'About') },
 
-    { id: 'services', label: isAr ? 'الخدمات' : (t.services || 'Services') },
     { id: 'workshops', label: isAr ? 'ورش العمل' : 'Workshops' },
+        { id: 'services', label: isAr ? 'الخدمات' : (t.services || 'Services') },
+
     { id: 'posts', label: isAr ? 'المنشورات' : 'Posts' },
   ];
 

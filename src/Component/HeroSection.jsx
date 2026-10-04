@@ -17,26 +17,18 @@ function HeroSection() {
         
         <div className={`flex flex-col md:flex-row ${isAr ? '' : 'md:flex-row-reverse'} items-center justify-between gap-8`}>
           
-          {/* قسم الصورة */}
+          {/* قسم الصورة (المنارة ثابتة) */}
           <motion.div
             initial={{ x: isAr ? -100 : 100, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
-            transition={{ duration: 1, ease: "easeOut" }}
+            // تم إزالة خاصية animate و transition الخاصة بالحركة المستمرة من هنا
             className="flex-1 w-full flex justify-center"
           >
-            <motion.img 
+            <img 
               src="Hero.png" 
               alt="Manara" 
               className="w-[320px] md:w-[420px] max-w-full drop-shadow-2xl scale-x-[-1]" 
-              animate={{ 
-                y: [0, -10, 0], 
-                rotate: [0, 1.5, -1.5, 0] 
-              }}
-              transition={{ 
-                duration: 5, 
-                repeat: Infinity, 
-                ease: "easeInOut" 
-              }}
+              // أصبحت الآن صورة عادية ثابتة
             />
           </motion.div>
 
@@ -57,10 +49,9 @@ function HeroSection() {
               {t.heroTitle2}
             </h1>
             
-            {/* العنوان الرئيسي مع تأثير الكتابة وتغيير النص حسب اللغة فوراً */}
             <h1 className="text-2xl md:text-4xl font-bold text-[#f37321] mb-4 leading-tight min-h-[1.2em] drop-shadow-[0_0_12px_rgba(243,115,33,0.4)]">
               <Typewriter
-                key={lang} // مفتاح هام جداً: لإعادة تشغيل تأثير الكتابة فوراً عند الضغط على زر تغيير اللغة
+                key={lang}
                 words={[t.heroTitle]}
                 loop={1}
                 cursor
@@ -102,7 +93,7 @@ function HeroSection() {
             fill="#ffffff"
           ></path>
         </svg>
-      </div>
+        </div>
 
     </section>
   );
