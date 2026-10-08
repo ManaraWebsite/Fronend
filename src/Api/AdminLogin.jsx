@@ -29,7 +29,7 @@ function AdminLogin() {
         localStorage.setItem('isAdminLoggedIn', 'true');
         
         // الانتقال المباشر للداشبورد
-        window.location.href = '/admin';
+        window.location.href = '/admin/forms';
       } else {
         setErrorMessage('لم يتم العثور على رمز المصادقة في الاستجابة.');
       }
@@ -40,7 +40,7 @@ function AdminLogin() {
       } else if (error.request) {
         setErrorMessage('لم يتم استجابة من الخادم، تحقق من اتصال الإنترنت أو رابط الـ API.');
       } else {
-        setErrorMessage('حدث خطأ غير متوقع.');
+        setErrorMessage('حدث خطأ غير متوقع');
       }
     } finally {
       setLoading(false);

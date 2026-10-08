@@ -40,10 +40,13 @@ function App() {
         
         {/* مسارات الأدمن المحمية */}
         <Route path="/admin/*" element={
-          <ProtectedRoute>
+           <ProtectedRoute>
             <AdminDashboard />
-          </ProtectedRoute>
+           </ProtectedRoute>
         }>
+          {/* 👇 هذا السطر هو المسؤول عن تحويل مسار /admin الأساسي إلى /admin/forms تلقائياً */}
+          <Route index element={<Navigate to="forms" replace />} />
+
           {/* مسارات النماذج (Forms) */}
           <Route path="forms" element={<FormsList />} />
           <Route path="forms/create" element={<CreateForm />} />
@@ -63,5 +66,4 @@ function App() {
     </Router>
   );
 }
-
 export default App;

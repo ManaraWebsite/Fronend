@@ -143,11 +143,20 @@ const CreateForm = () => {
       
       if (image) formData.append('image', image);
 
-      await axiosClient.post('/admin/forms', formData, {
+      const response = await axiosClient.post('/admin/forms', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-      setMessage('تم إنشاء النموذج بنجاح!');
+      if (formStatus === 'Published') {
+        const newSlug = response.data?.slug || response.data?.data?.slug || generatedSlug;
+        const savedSlugs = JSON.parse(localStorage.getItem('my_workshop_slugs') || '[]');
+        if (!savedSlugs.includes(newSlug)) {
+          savedSlugs.push(newSlug);
+          localStorage.setItem('my_workshop_slugs', JSON.stringify(savedSlugs));
+        }
+      }
+
+      setMessage(formStatus === 'Published' ? 'تم نشر النموذج بنجاح!' : 'تم حفظ النموذج كمسودة بنجاح!');
     } catch (error) {
       const errorMsg = error.response?.data?.message || error.response?.data?.error || 'حدث خطأ أثناء حفظ النموذج.';
       setMessage(errorMsg);

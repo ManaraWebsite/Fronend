@@ -51,7 +51,7 @@ function Contact() {
   };
 
   return (
-    <section id='contact' className="py-24 bg-gray-50/50 overflow-hidden">
+    <section id='contact' className="py-24 bg-white overflow-hidden">
       <div className="container mx-auto px-6 grid md:grid-cols-12 gap-12 items-start">
         
         {/* نموذج الإرسال */}

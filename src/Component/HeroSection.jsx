@@ -28,7 +28,6 @@ function HeroSection() {
               src="Hero.png" 
               alt="Manara" 
               className="w-[320px] md:w-[420px] max-w-full drop-shadow-2xl scale-x-[-1]" 
-              // أصبحت الآن صورة عادية ثابتة
             />
           </motion.div>
 
