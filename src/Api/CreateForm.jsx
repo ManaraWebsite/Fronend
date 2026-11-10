@@ -24,12 +24,13 @@ const CreateForm = () => {
     description: '',
     isActive: false,
     imageUrl: null,
+    formImageUrl: null,
     fields: buildDefaultFields(),
   }));
 
   // POST /admin/forms — الـ backend يولّد الـ slug من العنوان
-  const handleSubmit = async (payload, publish) => {
-    await axiosClient.post('/admin/forms', payload);
+  const handleSubmit = async (payload, publish, requestConfig) => {
+    await axiosClient.post('/admin/forms', payload, requestConfig);
     navigate('/admin/forms', {
       state: { flash: publish ? 'Form published successfully.' : 'Form saved as draft.' },
     });

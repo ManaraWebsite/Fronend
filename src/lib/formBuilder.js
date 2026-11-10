@@ -51,7 +51,8 @@ export const validateFormDraft = ({ title, fields }) => {
 
 // يبني الـ payload بنفس المفاتيح التي يتحقق منها الـ backend. لا نرسل slug:
 // الـ backend يولّده عند الإنشاء، وإعادة توليده عند التعديل كانت تغيّر رابط النموذج المنشور.
-export const buildFormPayload = ({ title, description, isActive, fields, image, removeImage }) => {
+// image: صورة الورشة 4:5، و formImage: بانر نموذج التسجيل 16:9 — يُرسل كلٌّ منهما (أو طلب حذفه) مستقلاً.
+export const buildFormPayload = ({ title, description, isActive, fields, image, removeImage, formImage, removeFormImage }) => {
   const payload = new FormData();
   payload.append('title', title.trim());
   payload.append('description', description.trim());
@@ -76,6 +77,12 @@ export const buildFormPayload = ({ title, description, isActive, fields, image, 
     payload.append('image', image);
   } else if (removeImage) {
     payload.append('remove_image', '1');
+  }
+
+  if (formImage) {
+    payload.append('form_image', formImage);
+  } else if (removeFormImage) {
+    payload.append('remove_form_image', '1');
   }
 
   return payload;

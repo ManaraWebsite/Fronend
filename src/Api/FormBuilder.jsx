@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import {
   FiType, FiFileText, FiMail, FiHash,
   FiCalendar, FiChevronDown, FiCheckSquare, FiRadio, FiUpload,
-  FiTrash2, FiArrowUp, FiArrowDown, FiCheck, FiImage, FiX, FiSave
+  FiTrash2, FiArrowUp, FiArrowDown, FiCheck, FiImage, FiSave
 } from 'react-icons/fi';
 import { CHOICE_TYPES, buildFormPayload, createLocalField, validateFormDraft } from '../lib/formBuilder';
 import { getApiErrorMessage } from '../lib/apiError';
 import useObjectUrl from '../hooks/useObjectUrl';
+import { uploadPercent } from '../lib/images';
+import ImageSlotField from './ImageSlotField';
 
 const fieldTypes = [
   { type: 'text', label: 'Text', icon: FiType },
@@ -31,29 +33,43 @@ const FormBuilder = ({ mode, initialValues, onSubmit }) => {
   const [fields, setFields] = useState(initialValues.fields);
   const [selectedKey, setSelectedKey] = useState(initialValues.fields[0]?.key || null);
 
+  // صورتان مستقلتان: صورة الورشة 4:5 (بطاقات الورش في الرئيسية) وبانر نموذج التسجيل 16:9.
+  // لكلٍّ منهما حالة رفع/حذف خاصة، فتغيير إحداهما لا يمسّ الأخرى
   const [image, setImage] = useState(null);
   const [removeImage, setRemoveImage] = useState(false);
   const imageObjectUrl = useObjectUrl(image);
   const imagePreview = imageObjectUrl || (removeImage ? null : initialValues.imageUrl);
 
+  const [formImage, setFormImage] = useState(null);
+  const [removeFormImage, setRemoveFormImage] = useState(false);
+  const formImageObjectUrl = useObjectUrl(formImage);
+  const formImagePreview = formImageObjectUrl || (removeFormImage ? null : initialValues.formImageUrl);
+
+  const [uploadProgress, setUploadProgress] = useState(null);
   const [submittingAction, setSubmittingAction] = useState(null);
   const [errors, setErrors] = useState(null);
   const [serverError, setServerError] = useState('');
 
   const selectedField = fields.find((f) => f.key === selectedKey);
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setImage(file);
-      setRemoveImage(false);
-    }
-    e.target.value = '';
+  const handleImageChange = (file) => {
+    setImage(file);
+    setRemoveImage(false);
   };
 
   const handleRemoveImage = () => {
     setImage(null);
     setRemoveImage(Boolean(initialValues.imageUrl));
+  };
+
+  const handleFormImageChange = (file) => {
+    setFormImage(file);
+    setRemoveFormImage(false);
+  };
+
+  const handleRemoveFormImage = () => {
+    setFormImage(null);
+    setRemoveFormImage(Boolean(initialValues.formImageUrl));
   };
 
   const addField = (typeObj) => {
@@ -99,15 +115,22 @@ const FormBuilder = ({ mode, initialValues, onSubmit }) => {
     }
 
     setSubmittingAction(publish ? 'publish' : 'draft');
+    const payload = buildFormPayload({ title, description, isActive: publish, fields, image, removeImage, formImage, removeFormImage });
+    const requestConfig = image || formImage
+      ? { onUploadProgress: (event) => setUploadProgress(uploadPercent(event)) }
+      : undefined;
+
     try {
-      await onSubmit(buildFormPayload({ title, description, isActive: publish, fields, image, removeImage }), publish);
+      await onSubmit(payload, publish, requestConfig);
     } catch (error) {
       setServerError(getApiErrorMessage(error, 'Failed to save the form.'));
       setSubmittingAction(null);
+      setUploadProgress(null);
     }
   };
 
   const busy = submittingAction !== null;
+  const uploading = busy && uploadProgress !== null && uploadProgress < 100;
   const statusLabel = initialValues.isActive ? 'Published' : 'Draft';
 
   return (
@@ -130,23 +153,19 @@ const FormBuilder = ({ mode, initialValues, onSubmit }) => {
         </div>
       )}
 
-      {/* معاينة النموذج */}
-      <div className="bg-[#161b22] rounded-2xl border border-gray-800 mb-8 overflow-hidden shadow-sm">
-        <div className="w-full h-32 bg-[#0d1117] border-b border-gray-800 relative flex items-center justify-center overflow-hidden">
-          {imagePreview ? (
-            <>
-              <img src={imagePreview} alt="Form cover" className="w-full h-full object-cover" />
-              <button type="button" onClick={handleRemoveImage} aria-label="Remove header image" className="absolute top-2 right-2 bg-black/60 text-white p-1.5 rounded-full hover:bg-red-600 transition cursor-pointer">
-                <FiX size={14} />
-              </button>
-            </>
-          ) : (
-            <div className="flex flex-col items-center text-gray-500 text-xs gap-1">
-              <FiImage size={20} />
-              <span>Header Image (Optional)</span>
-            </div>
-          )}
-        </div>
+      {/* معاينة نموذج التسجيل بنفس عرض الصفحة العامة، فيظهر قصّ البانر 16:9 كما سيراه الزائر */}
+      <p className="text-xs font-semibold text-gray-400 uppercase mb-2 max-w-2xl mx-auto">Registration page preview</p>
+      <div className="bg-[#161b22] rounded-2xl border border-gray-800 mb-8 overflow-hidden shadow-sm max-w-2xl mx-auto">
+        {formImagePreview ? (
+          <div className="w-full aspect-video bg-[#0d1117] border-b border-gray-800 relative overflow-hidden">
+            <img src={formImagePreview} alt="Registration banner preview" className="absolute inset-0 w-full h-full object-cover" />
+          </div>
+        ) : (
+          <div className="w-full h-24 bg-[#0d1117] border-b border-gray-800 flex flex-col items-center justify-center text-gray-500 text-xs gap-1">
+            <FiImage size={20} aria-hidden="true" />
+            <span>No registration banner — visitors see the Manara fallback header</span>
+          </div>
+        )}
 
         <div className="p-6 space-y-4">
           <div>
@@ -224,21 +243,37 @@ const FormBuilder = ({ mode, initialValues, onSubmit }) => {
                 className={inputClass}
               />
             </div>
+          </div>
 
+          {/* الصور: نوعان مختلفان بنسبتين مختلفتين — لا يُستخدم أحدهما بديلاً عن الآخر */}
+          <div className="bg-[#161b22] p-4 rounded-2xl border border-gray-800 space-y-3">
             <div>
-              <span className="block text-xs font-semibold text-gray-400 uppercase mb-1">Header Image</span>
-              <div className="flex flex-wrap items-center gap-3">
-                <label className="flex-1 min-w-48 flex items-center justify-center gap-2 p-3 bg-[#0d1117] border border-gray-800 border-dashed rounded-xl cursor-pointer hover:border-[#ff7a00] focus-within:border-[#ff7a00] transition text-xs text-gray-400">
-                  <FiUpload size={16} />
-                  <span>{image ? image.name : imagePreview ? 'Replace header image...' : 'Choose header image (max 2 MB)...'}</span>
-                  <input type="file" accept="image/*" onChange={handleImageChange} className="sr-only" />
-                </label>
-                {imagePreview && (
-                  <button type="button" onClick={handleRemoveImage} className="px-4 py-3 bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl text-xs font-semibold hover:bg-red-500/20 transition cursor-pointer">
-                    Remove
-                  </button>
-                )}
-              </div>
+              <h2 className="text-xs font-semibold text-gray-400 uppercase">Images</h2>
+              <p className="text-xs text-gray-500 mt-1">These are two separate images. Changing one never changes the other.</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <ImageSlotField
+                id="workshop-image"
+                label="Workshop image"
+                ratio="portrait"
+                description="The Instagram post image, shown on the homepage workshop cards."
+                previewUrl={imagePreview}
+                fileName={image?.name}
+                isNew={Boolean(image)}
+                onSelect={handleImageChange}
+                onRemove={handleRemoveImage}
+              />
+              <ImageSlotField
+                id="form-banner-image"
+                label="Registration form banner"
+                ratio="banner"
+                description="A wide banner shown at the top of the registration form page. It is not taken from the workshop image."
+                previewUrl={formImagePreview}
+                fileName={formImage?.name}
+                isNew={Boolean(formImage)}
+                onSelect={handleFormImageChange}
+                onRemove={handleRemoveFormImage}
+              />
             </div>
           </div>
 
@@ -395,11 +430,11 @@ const FormBuilder = ({ mode, initialValues, onSubmit }) => {
       <div className="flex flex-wrap justify-end items-center gap-3 mt-8 pt-4 border-t border-gray-800">
         <button type="button" onClick={() => handleSubmit(false)} disabled={busy} className="px-5 py-2.5 bg-[#161b22] border border-gray-800 text-gray-300 rounded-xl text-sm font-semibold hover:bg-gray-800 transition cursor-pointer disabled:opacity-50 flex items-center gap-2">
           <FiSave />
-          <span>{submittingAction === 'draft' ? 'Saving...' : 'Save as Draft'}</span>
+          <span>{submittingAction === 'draft' ? (uploading ? `Uploading… ${uploadProgress}%` : 'Saving...') : 'Save as Draft'}</span>
         </button>
         <button type="button" onClick={() => handleSubmit(true)} disabled={busy} className="px-5 py-2.5 bg-[#ff7a00] text-white rounded-xl text-sm font-semibold hover:bg-[#e06c00] transition shadow-sm flex items-center gap-2 cursor-pointer disabled:opacity-50">
           <FiCheck />
-          <span>{submittingAction === 'publish' ? 'Publishing...' : isEdit ? 'Save & Publish' : 'Publish Form'}</span>
+          <span>{submittingAction === 'publish' ? (uploading ? `Uploading… ${uploadProgress}%` : 'Publishing...') : isEdit ? 'Save & Publish' : 'Publish Form'}</span>
         </button>
       </div>
     </div>

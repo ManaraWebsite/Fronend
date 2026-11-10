@@ -4,9 +4,8 @@ import { FiArrowLeft } from 'react-icons/fi';
 import axiosClient from './axiosClient';
 import { localize } from '../lib/localize';
 import { getApiErrorMessage } from '../lib/apiError';
-import useObjectUrl from '../hooks/useObjectUrl';
-
-const MAX_COVER_BYTES = 2048 * 1024; // نفس حد الـ backend (max:2048 KB)
+import PostImagesField from './PostImagesField';
+import { appendPostImages, imagesFromApi, uploadPercent } from '../lib/images';
 
 const inputClass = 'w-full px-4 py-3 bg-[#0d1117] text-white border border-gray-800 rounded-xl focus:outline-none focus:border-[#ff7a00] focus:ring-1 focus:ring-[#ff7a00] text-sm placeholder-gray-500';
 
@@ -20,9 +19,10 @@ const PostForm = () => {
   const [content, setContent] = useState('');
   const [status, setStatus] = useState('published');
   const [originalStatus, setOriginalStatus] = useState(null);
-  const [existingCover, setExistingCover] = useState(null);
-  const [coverImage, setCoverImage] = useState(null);
-  const coverPreview = useObjectUrl(coverImage) || existingCover;
+  // المعرض الحالي في المحرر، والصور المحفوظة كما وصلت من الخادم (لمعرفة ما حُذف)
+  const [images, setImages] = useState([]);
+  const [savedImages, setSavedImages] = useState([]);
+  const [uploadProgress, setUploadProgress] = useState(null);
 
   const [loading, setLoading] = useState(isEdit);
   const [loadError, setLoadError] = useState('');
@@ -42,7 +42,9 @@ const PostForm = () => {
         setContent(localize(post.content, 'AR'));
         setStatus(post.status);
         setOriginalStatus(post.status);
-        setExistingCover(post.cover_image || null);
+        const gallery = imagesFromApi(post.images);
+        setImages(gallery);
+        setSavedImages(gallery);
       })
       .catch((err) => {
         if (!cancelled) setLoadError(getApiErrorMessage(err, 'Failed to load the post.'));
@@ -55,17 +57,6 @@ const PostForm = () => {
       cancelled = true;
     };
   }, [isEdit, slug]);
-
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    setError('');
-    if (file && file.size > MAX_COVER_BYTES) {
-      setError('The cover image must be 2 MB or smaller.');
-      e.target.value = '';
-      return;
-    }
-    setCoverImage(file || null);
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -88,20 +79,29 @@ const PostForm = () => {
       formData.append('status', status);
     }
 
-    if (coverImage) formData.append('cover_image', coverImage);
+    appendPostImages(formData, images, savedImages);
+
+    const hasUploads = images.some((image) => !image.id);
+    const config = hasUploads ? { onUploadProgress: (event) => setUploadProgress(uploadPercent(event)) } : undefined;
 
     try {
       if (isEdit) {
-        await axiosClient.post(`/admin/posts/${slug}`, formData);
+        await axiosClient.post(`/admin/posts/${slug}`, formData, config);
       } else {
-        await axiosClient.post('/admin/posts', formData);
+        await axiosClient.post('/admin/posts', formData, config);
       }
       navigate('/admin/posts', { state: { flash: isEdit ? 'Post updated successfully.' : 'Post created successfully.' } });
     } catch (err) {
       setError(getApiErrorMessage(err, 'Failed to save the post.'));
       setSubmitting(false);
+      setUploadProgress(null);
     }
   };
+
+  // أثناء الرفع نعرض النسبة؛ وبعد اكتمالها ينتظر الطلب معالجة الخادم
+  const submitLabel = !submitting
+    ? (isEdit ? 'Save Changes' : 'Create Post')
+    : uploadProgress !== null && uploadProgress < 100 ? `Uploading images… ${uploadProgress}%` : 'Saving...';
 
   if (loading) {
     return <div className="p-8 text-center text-gray-400 min-h-screen bg-[#0d1117]">Loading post...</div>;
@@ -173,21 +173,7 @@ const PostForm = () => {
           ></textarea>
         </div>
 
-        <div>
-          <label htmlFor="post-cover" className="block text-sm font-semibold text-gray-300 mb-2">
-            Cover image <span className="text-gray-500 font-normal">(optional, max 2 MB{isEdit ? ' — leave empty to keep the current image' : ''})</span>
-          </label>
-          <input
-            id="post-cover"
-            type="file"
-            onChange={handleImageChange}
-            accept="image/*"
-            className="w-full text-sm text-gray-400 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#ff7a00]/20 file:text-[#ff7a00] hover:file:bg-[#ff7a00]/30 cursor-pointer"
-          />
-          {coverPreview && (
-            <img src={coverPreview} alt="Cover preview" className="mt-3 h-32 w-auto object-cover rounded-lg border border-gray-800" />
-          )}
-        </div>
+        <PostImagesField images={images} onChange={setImages} />
 
         <div>
           <label htmlFor="post-status" className="block text-sm font-semibold text-gray-300 mb-2">Status</label>
@@ -205,9 +191,13 @@ const PostForm = () => {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full bg-[#ff7a00] text-white font-semibold py-3 px-4 rounded-xl hover:bg-[#e06c00] transition disabled:opacity-50 cursor-pointer"
+          aria-live="polite"
+          className="relative overflow-hidden w-full bg-[#ff7a00] text-white font-semibold py-3 px-4 rounded-xl hover:bg-[#e06c00] transition disabled:opacity-50 cursor-pointer"
         >
-          {submitting ? 'Saving...' : isEdit ? 'Save Changes' : 'Create Post'}
+          {submitting && uploadProgress !== null && (
+            <span aria-hidden="true" className="absolute inset-y-0 left-0 bg-white/20 transition-[width]" style={{ width: `${uploadProgress}%` }} />
+          )}
+          <span className="relative">{submitLabel}</span>
         </button>
       </form>
     </div>

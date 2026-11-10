@@ -520,8 +520,9 @@ body {
 .workshop-count-dot { width: 8px; height: 8px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 0 4px rgb(74 222 128 / .18); }
 
 .workshop-featured { border-radius: 1.75rem; overflow: hidden; border: 1px solid var(--color-brand-line); background: var(--color-brand-surface); }
-.workshop-featured-link { display: grid; grid-template-columns: 1fr 1.15fr; height: clamp(20rem, 30vw, 25rem); }
-.workshop-featured-media { height: 100%; }
+.workshop-featured-link { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 22rem); }
+/* صورة الورشة بنسبة منشور إنستغرام 4:5 */
+.workshop-featured-media { aspect-ratio: 4 / 5; }
 .workshop-featured-body { padding: 2.5rem; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; }
 .workshop-featured-link:focus-visible { outline: 2px solid var(--color-brand-orange-light); outline-offset: 4px; border-radius: 1.75rem; }
 .workshop-badge { display: inline-flex; padding: .3rem .8rem; border-radius: 999px; font-size: .75rem; font-weight: 700; color: var(--color-brand-night); background: var(--color-brand-orange-light); }
@@ -543,7 +544,7 @@ body {
 .workshop-row:hover::before, .workshop-row:focus-visible::before { transform: translateX(0); }
 .workshop-row:focus-visible { outline: 2px solid var(--color-brand-orange-light); outline-offset: 3px; }
 .workshop-row-index { font-size: .8rem; font-variant-numeric: tabular-nums; color: var(--color-brand-orange-light); width: 1.6rem; flex: none; }
-.workshop-row-thumb { width: 5.5rem; height: 4.25rem; border-radius: .85rem; flex: none; }
+.workshop-row-thumb { width: 4.5rem; aspect-ratio: 4 / 5; border-radius: .85rem; flex: none; }
 .workshop-row-go { display: grid; place-items: center; width: 2.6rem; height: 2.6rem; border-radius: 50%; flex: none; border: 1px solid var(--color-brand-line); color: var(--color-brand-orange-light);
   transition: background-color .3s ease, color .3s ease, transform .3s ease; }
 .workshop-row:hover .workshop-row-go { background: var(--color-brand-orange); color: #fff; transform: rotate(-8deg); }
@@ -560,12 +561,12 @@ body {
 .workshop-state { border-radius: 1.5rem; border: 1px solid var(--color-brand-line); background: rgb(255 255 255 / .03); padding: 2.5rem; text-align: center; display: flex; flex-direction: column; align-items: center; }
 
 @media (max-width: 767px) {
-  .workshop-featured-link { grid-template-columns: 1fr; height: auto; }
-  .workshop-featured-media { aspect-ratio: 16 / 10; height: auto; order: -1; }
+  .workshop-featured-link { grid-template-columns: 1fr; }
+  .workshop-featured-media { order: -1; }
   .workshop-featured-body { padding: 1.6rem; }
   .workshop-row { gap: .8rem; padding: .8rem; }
   .workshop-row-index { display: none; }
-  .workshop-row-thumb { width: 4.25rem; height: 3.5rem; }
+  .workshop-row-thumb { width: 3.6rem; }
   .workshop-steps { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -671,30 +672,36 @@ body {
 .post-zoom { transition: transform .8s cubic-bezier(.22, 1, .36, 1); }
 .group:hover .post-zoom { transform: scale(1.05); }
 
-.post-lead-link { display: block; border-radius: 1.75rem; }
+.post-lead-link { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 2rem; align-items: center; border-radius: 1.75rem; }
 .post-lead-link:focus-visible, .post-compact:focus-visible, .post-grid-item:focus-visible { outline: 2px solid var(--color-brand-orange); outline-offset: 4px; }
-.post-lead-media { aspect-ratio: 16 / 9; border-radius: 1.5rem; }
-.post-lead-body { padding-top: 1.5rem; }
+/* صور المنشورات بنسبة منشور إنستغرام العمودية 4:5 في كل البطاقات */
+.post-lead-media { aspect-ratio: 4 / 5; border-radius: 1.5rem; }
 .post-read { display: inline-flex; align-items: center; gap: .5rem; font-weight: 700; font-size: .95rem; color: var(--color-brand-orange-dark); transition: gap .25s ease; }
 .group:hover .post-read, .post-read:hover { gap: .8rem; }
 
 .post-side { display: grid; gap: 0; align-content: start; }
 .post-side > li + li { border-top: 1px solid #efedf6; }
-.post-compact { display: grid; grid-template-columns: 8.5rem 1fr; gap: 1.1rem; align-items: center; padding: 1.1rem 0; border-radius: 1rem; }
-.post-compact-media { aspect-ratio: 4 / 3; border-radius: 1rem; }
+.post-compact { display: grid; grid-template-columns: 6.5rem 1fr; gap: 1.1rem; align-items: center; padding: 1.1rem 0; border-radius: 1rem; }
+.post-compact-media { aspect-ratio: 4 / 5; border-radius: 1rem; }
 .post-side > li:first-child .post-compact { padding-top: 0; }
 
-.post-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 2rem; }
+.post-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 2rem; }
 .post-grid-item { display: block; border-radius: 1rem; }
-.post-grid-media { aspect-ratio: 16 / 10; border-radius: 1rem; margin-bottom: .9rem; }
+.post-grid-media { aspect-ratio: 4 / 5; border-radius: 1rem; margin-bottom: .9rem; }
+/* شارة «عدة صور» فوق الصورة */
+.gallery-badge { position: absolute; top: .6rem; inset-inline-end: .6rem; display: inline-flex; align-items: center; gap: .3rem; padding: .25rem .5rem; border-radius: 999px;
+  font-size: .75rem; font-weight: 700; color: #fff; background: rgb(12 8 32 / .62); backdrop-filter: blur(4px); }
 .post-more { display: block; margin-inline: auto; height: 3rem; padding: 0 1.6rem 3px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--color-brand-purple) 20%, transparent);
   color: var(--color-brand-purple); font-weight: 700; transition: background-color .2s ease, border-color .2s ease; }
 .post-more:hover { background: var(--color-brand-tint); border-color: var(--color-brand-purple); }
 .post-more:focus-visible { outline: 2px solid var(--color-brand-orange); outline-offset: 3px; }
 .post-state { border-radius: 1.5rem; background: var(--color-brand-tint); padding: 2.5rem; text-align: center; display: flex; flex-direction: column; align-items: center; }
 
+@media (max-width: 767px) {
+  .post-lead-link { grid-template-columns: 1fr; gap: 1.5rem; }
+}
 @media (max-width: 640px) {
-  .post-compact { grid-template-columns: 6.5rem 1fr; gap: .9rem; }
+  .post-compact { grid-template-columns: 5rem 1fr; gap: .9rem; }
   .posts-masthead { border-bottom-width: 1px; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -707,6 +714,32 @@ body {
 .reading-progress { position: fixed; top: 0; inset-inline: 0; height: 3px; z-index: 60; pointer-events: none; }
 .reading-progress > span { display: block; height: 100%; background: linear-gradient(90deg, var(--color-brand-orange), var(--color-brand-orange-light)); transform: scaleX(0); transform-origin: left; }
 [dir="rtl"] .reading-progress > span { transform-origin: right; }
+/* معرض المقال: شرائح 4:5 بعرض لا يتجاوز دقة صور إنستغرام فتبقى حادة */
+.post-gallery { position: relative; width: min(100%, 30rem); margin-inline: auto; border-radius: 1.5rem; overflow: hidden; background: var(--color-brand-tint);
+  box-shadow: 0 25px 50px -20px rgb(49 35 100 / .25); }
+.post-gallery-track { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; scrollbar-width: none; }
+.post-gallery-track::-webkit-scrollbar { display: none; }
+.post-gallery-track:focus-visible { outline: 3px solid var(--color-brand-orange); outline-offset: -3px; }
+.post-gallery-slide { flex: 0 0 100%; aspect-ratio: 4 / 5; scroll-snap-align: start; scroll-snap-stop: always; }
+.post-gallery-count { position: absolute; top: .8rem; inset-inline-end: .8rem; padding: .2rem .6rem; border-radius: 999px; font-size: .75rem; font-weight: 700; font-variant-numeric: tabular-nums;
+  color: #fff; background: rgb(12 8 32 / .62); }
+.post-gallery-nav { position: absolute; top: 50%; translate: 0 -50%; display: grid; place-items: center; width: 2.4rem; height: 2.4rem; border-radius: 50%; font-size: 1.2rem;
+  color: var(--color-brand-purple); background: rgb(255 255 255 / .9); box-shadow: 0 4px 14px rgb(0 0 0 / .15); transition: opacity .2s ease, transform .2s ease; cursor: pointer; }
+.post-gallery-nav:hover:not(:disabled) { transform: scale(1.06); }
+.post-gallery-nav:disabled { opacity: 0; pointer-events: none; }
+.post-gallery-nav:focus-visible { outline: 2px solid var(--color-brand-orange); outline-offset: 2px; }
+.post-gallery-nav--prev { inset-inline-start: .75rem; }
+.post-gallery-nav--next { inset-inline-end: .75rem; }
+.post-gallery-dots { position: absolute; bottom: .8rem; inset-inline: 0; display: flex; justify-content: center; gap: .35rem; }
+.post-gallery-dots button { width: .45rem; height: .45rem; border-radius: 999px; background: rgb(255 255 255 / .6); box-shadow: 0 0 0 1px rgb(0 0 0 / .12); transition: width .25s ease, background-color .25s ease; cursor: pointer; }
+.post-gallery-dots button.is-active { width: 1.2rem; background: #fff; }
+.post-gallery-dots button:focus-visible { outline: 2px solid var(--color-brand-orange); outline-offset: 2px; }
+@media (hover: none) { .post-gallery-nav { display: none; } }
+
+/* بانر نموذج التسجيل 16:9، وشريط بديل بهوية منارة حين لا يوجد بانر */
+.form-banner-fallback { height: 7rem; }
+.form-banner-fallback .brand-cover-mark { width: auto; height: 4.25rem; }
+
 .post-body { color: #2b2640; font-size: 1.125rem; line-height: 2; }
 .post-body p { white-space: pre-line; overflow-wrap: anywhere; }
 .post-body p + p { margin-top: 1.4em; }

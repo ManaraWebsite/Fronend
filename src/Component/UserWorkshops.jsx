@@ -52,7 +52,7 @@ function Featured({ form, lang, isAr }) {
             <FiArrowUpRight aria-hidden="true" className={isAr ? '-scale-x-100' : ''} />
           </span>
         </div>
-        {/* النص أولاً (يمين العربية / يسار الإنجليزية) والصورة بجانبه */}
+        {/* النص أولاً (يمين العربية / يسار الإنجليزية) وصورة الورشة 4:5 بجانبه — ليست بانر نموذج التسجيل */}
         <CoverImage src={resolveMediaUrl(form.image)} tone="dark" className="workshop-featured-media" imgClassName="transition-transform duration-700 ease-out group-hover:scale-[1.04]" />
       </Link>
     </motion.article>

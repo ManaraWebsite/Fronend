@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { FiCopy } from 'react-icons/fi';
 import { EASE, reveal } from '../lib/brand';
 
 // عناصر هوية مشتركة بين أقسام الصفحة (الورش، الخدمات، المنشورات، التواصل):
@@ -50,14 +51,27 @@ export function BrandCover({ tone = 'dark', className = '' }) {
   );
 }
 
-// صورة تتراجع إلى الغلاف البديل إن لم توجد أو فشل تحميلها
-export function CoverImage({ src, tone = 'dark', className = '', imgClassName = '', alt = '' }) {
+// صورة تتراجع إلى الغلاف البديل إن لم توجد أو فشل تحميلها. الإطار يحدد النسبة (مثل 4:5)
+// والصورة تملؤه بـ object-cover فلا تتمدد؛ children تُرسم فوق الصورة (شارة عدد الصور مثلاً)
+export function CoverImage({ src, tone = 'dark', className = '', imgClassName = '', alt = '', eager = false, children }) {
   const [failed, setFailed] = useState(false);
   if (!src || failed) return <BrandCover tone={tone} className={className} />;
   return (
     // الصورة تملأ إطارها (absolute) فلا يمدّ ارتفاعها الطبيعي البطاقة
     <div className={`relative overflow-hidden ${className}`}>
-      <img src={src} alt={alt} loading="lazy" decoding="async" onError={() => setFailed(true)} className={`absolute inset-0 w-full h-full object-cover ${imgClassName}`} />
+      <img src={src} alt={alt} loading={eager ? 'eager' : 'lazy'} fetchPriority={eager ? 'high' : undefined} decoding="async" onError={() => setFailed(true)} className={`absolute inset-0 w-full h-full object-cover ${imgClassName}`} />
+      {children}
     </div>
+  );
+}
+
+// شارة «عدة صور» كما في منشورات إنستغرام المتعددة
+export function GalleryBadge({ count, isAr }) {
+  if (!count || count < 2) return null;
+  return (
+    <span className="gallery-badge" aria-label={isAr ? `${count} صور` : `${count} images`}>
+      <FiCopy aria-hidden="true" />
+      <span aria-hidden="true">{count}</span>
+    </span>
   );
 }

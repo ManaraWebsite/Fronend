@@ -5,10 +5,11 @@ import { FiArrowLeft, FiArrowRight, FiArrowUpRight } from 'react-icons/fi';
 import { LanguageContext } from '../LanguageContext';
 import axiosClient from '../Api/axiosClient';
 import { localize } from '../lib/localize';
-import { resolveMediaUrl } from '../lib/media';
 import { formatDate, readingTime, EASE } from '../lib/brand';
 import { usePosts } from '../hooks/usePosts';
-import { CoverImage, Kicker } from './brand';
+import { postImageUrls } from '../lib/images';
+import { CoverImage, GalleryBadge, Kicker } from './brand';
+import PostGallery from './PostGallery';
 import Navbar from './Navbar';
 import Footer from './Footer';
 
@@ -71,7 +72,7 @@ function PostDetail() {
 
   const title = post ? localize(post.title, lang) : '';
   const content = post ? localize(post.content, lang) : '';
-  const coverUrl = post ? resolveMediaUrl(post.cover_image) : null;
+  const images = post ? postImageUrls(post) : [];
   const postDate = formatDate(post?.published_at, isAr);
   const others = allPosts.filter(p => p.slug !== slug).slice(0, 3);
 
@@ -128,9 +129,10 @@ function PostDetail() {
 
         {status === 'ready' && (
           <article ref={article} className="container mx-auto px-6 md:px-10 pb-20">
-            {coverUrl && (
-              <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.1, ease: EASE }} className="max-w-4xl mx-auto -mt-2">
-                <CoverImage src={coverUrl} tone="light" className="aspect-[16/9] rounded-3xl shadow-xl shadow-brand-purple/10" />
+            {/* بلا صور: يبدأ نص المقال مباشرة بعد الرأس بدلاً من غلاف فارغ كبير */}
+            {images.length > 0 && (
+              <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.1, ease: EASE }} className="-mt-2">
+                <PostGallery images={images} title={title} isAr={isAr} />
               </motion.div>
             )}
             {/* المحتوى نص عادي — React يهرّب أي HTML تلقائياً */}
@@ -148,7 +150,9 @@ function PostDetail() {
                 {others.map(p => (
                   <li key={p.id ?? p.slug}>
                     <Link to={`/posts/${p.slug}`} className="post-grid-item group">
-                      <CoverImage src={resolveMediaUrl(p.cover_image)} tone="light" className="post-grid-media" imgClassName="post-zoom" />
+                      <CoverImage src={postImageUrls(p)[0]} tone="light" className="post-grid-media" imgClassName="post-zoom">
+                        <GalleryBadge count={postImageUrls(p).length} isAr={isAr} />
+                      </CoverImage>
                       <span className="post-meta">{formatDate(p.published_at, isAr)}</span>
                       <span className="post-title block text-lg leading-snug mt-1.5 line-clamp-2" dir="auto"><span>{localize(p.title, lang)}</span></span>
                       <span className="post-read mt-3 text-sm">{isAr ? 'اقرأ' : 'Read'}<FiArrowUpRight aria-hidden="true" className={isAr ? '-scale-x-100' : ''} /></span>

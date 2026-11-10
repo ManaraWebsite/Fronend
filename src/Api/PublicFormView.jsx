@@ -6,6 +6,7 @@ import { HiGlobeAlt } from 'react-icons/hi2';
 import { LanguageContext } from '../LanguageContext';
 import { localize } from '../lib/localize';
 import { resolveMediaUrl } from '../lib/media';
+import { BrandCover, CoverImage } from '../Component/brand';
 import { getValidationErrors } from '../lib/apiError';
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024; // SubmitFormRequest: PDF حتى 5 MB
@@ -371,7 +372,8 @@ const PublicFormView = () => {
     );
   }
 
-  const coverUrl = resolveMediaUrl(form.image);
+  // بانر النموذج 16:9 مستقل عن صورة الورشة (4:5) — لا نستخدم صورة الورشة بديلاً عنه
+  const bannerUrl = resolveMediaUrl(form.form_image);
   const description = localize(form.description, lang);
   const hasRequired = fields.some((field) => Boolean(field.is_required));
   const inputClass = (hasError) =>
@@ -379,11 +381,9 @@ const PublicFormView = () => {
 
   return page(
     <main className={cardClass}>
-      {coverUrl && (
-        <div className="w-full h-40 sm:h-52 bg-brand-tint">
-          <img src={coverUrl} alt="" className="w-full h-full object-cover" />
-        </div>
-      )}
+      {bannerUrl
+        ? <CoverImage src={bannerUrl} tone="light" eager className="w-full aspect-video bg-brand-tint" />
+        : <BrandCover tone="light" className="w-full form-banner-fallback" />}
 
       <div className="p-6 sm:p-10">
         <header className="pb-6 mb-8 border-b border-brand-purple/10">

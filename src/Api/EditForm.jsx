@@ -28,6 +28,7 @@ export function EditForm() {
           description: localize(form.description, 'AR'),
           isActive: Boolean(form.is_active),
           imageUrl: form.image || null,
+          formImageUrl: form.form_image || null,
           fields: fieldsFromApi(form.fields),
         });
       })
@@ -41,9 +42,9 @@ export function EditForm() {
   }, [slug]);
 
   // PUT /admin/forms/{slug} عبر POST + _method لأن الطلب multipart (صورة)
-  const handleSubmit = async (payload) => {
+  const handleSubmit = async (payload, publish, requestConfig) => {
     payload.append('_method', 'PUT');
-    await axiosClient.post(`/admin/forms/${slug}`, payload);
+    await axiosClient.post(`/admin/forms/${slug}`, payload, requestConfig);
     navigate('/admin/forms', { state: { flash: 'Form updated successfully.' } });
   };
 
