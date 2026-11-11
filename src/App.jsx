@@ -22,6 +22,8 @@ const FieldVoicesAdmin = lazy(() => import('./Api/FieldVoicesAdmin'));
 const FieldVoiceForm = lazy(() => import('./Api/FieldVoiceForm'));
 const MomentGroupsAdmin = lazy(() => import('./Api/MomentGroupsAdmin'));
 const MomentGroupImages = lazy(() => import('./Api/MomentGroupImages'));
+const ContactMessagesAdmin = lazy(() => import('./Api/ContactMessagesAdmin'));
+const ContactMessageDetail = lazy(() => import('./Api/ContactMessageDetail'));
 
 // حماية مسارات الأدمن: التحقق من صلاحية التوكن ودور المستخدم يتم في AdminDashboard و axiosClient
 const ProtectedRoute = ({ children }) => {
@@ -67,6 +69,9 @@ function App() {
 
             <Route path="moments" element={<MomentGroupsAdmin />} />
             <Route path="moments/:id" element={<MomentGroupImages />} />
+
+            <Route path="messages" element={<ContactMessagesAdmin />} />
+            <Route path="messages/:id" element={<ContactMessageDetail />} />
 
             <Route path="*" element={<NotFound variant="admin" />} />
           </Route>

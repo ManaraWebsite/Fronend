@@ -6,11 +6,12 @@ import { LanguageContext } from '../LanguageContext';
 import { Kicker } from './brand';
 import { EASE, reveal } from '../lib/brand';
 import { CONTACT_INTENT_EVENT } from '../lib/contactIntent';
+import axiosClient from '../Api/axiosClient';
+import { getValidationErrors } from '../lib/apiError';
 
-// النموذج يرسل إلى بريد الفريق عبر formsubmit (نفس الخدمة السابقة، بلا خادم خاص)؛ الحقول: name, email, message،
-// و _subject بحسب الموضوع، و _honey حقل مخفي لصدّ الرسائل الآلية.
+// النموذج يرسل إلى POST /contact-messages: تُحفظ الرسالة في قاعدة البيانات أولاً، ثم يُبلَّغ الفريق بالبريد.
+// الحقول: name, email, message، و subject (اسم الموضوع المختار)، و locale، و website حقل مخفي لصدّ الرسائل الآلية.
 // الأزرار في بقية الصفحة (الحكاية، الخدمات، الورش) تحدد الموضوع عبر CONTACT_INTENT_EVENT.
-const ENDPOINT = 'https://formsubmit.co/ajax/manara.gaza.pal@gmail.com';
 
 const TOPICS = {
   general: { AR: ['استفسار عام', ''], EN: ['General question', ''] },
@@ -21,14 +22,26 @@ const TOPICS = {
 };
 const CHIPS = ['general', 'workshop', 'volunteer', 'partner', 'support'];
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+// نفس حدود StoreContactMessageRequest في الـ backend
+const LIMITS = { name: 100, email: 255, message: 5000 };
 
 function validate(values, isAr) {
   const errors = {};
-  if (values.name.trim().length < 2) errors.name = isAr ? 'اكتب اسمك (حرفان على الأقل).' : 'Enter your name (at least 2 characters).';
-  if (!EMAIL.test(values.email.trim())) errors.email = isAr ? 'اكتب بريداً إلكترونياً صحيحاً، مثل name@example.com.' : 'Enter a valid email, e.g. name@example.com.';
-  if (values.message.trim().length < 10) errors.message = isAr ? 'اكتب رسالتك (10 أحرف على الأقل).' : 'Write your message (at least 10 characters).';
+  const name = values.name.trim();
+  const message = values.message.trim();
+  if (name.length < 2) errors.name = isAr ? 'اكتب اسمك (حرفان على الأقل).' : 'Enter your name (at least 2 characters).';
+  else if (name.length > LIMITS.name) errors.name = isAr ? `الاسم أطول من ${LIMITS.name} حرف.` : `Your name is longer than ${LIMITS.name} characters.`;
+  if (!EMAIL.test(values.email.trim()) || values.email.trim().length > LIMITS.email) errors.email = isAr ? 'اكتب بريداً إلكترونياً صحيحاً، مثل name@example.com.' : 'Enter a valid email, e.g. name@example.com.';
+  if (message.length < 10) errors.message = isAr ? 'اكتب رسالتك (10 أحرف على الأقل).' : 'Write your message (at least 10 characters).';
+  else if (message.length > LIMITS.message) errors.message = isAr ? `الرسالة أطول من ${LIMITS.message} حرف.` : `Your message is longer than ${LIMITS.message} characters.`;
   return errors;
 }
+
+// رسالة الخادم بالإنجليزية؛ في الواجهة العربية نعرض بديلاً عاماً لنفس الحقل
+const serverFieldText = (field, text, isAr) => {
+  if (!isAr) return text;
+  return { name: 'تحقق من الاسم المكتوب.', email: 'تحقق من البريد الإلكتروني.', message: 'تحقق من نص الرسالة.' }[field] || text;
+};
 
 function Channel({ icon: Icon, label, value, href, copy, isAr, ltr }) {
   const [copied, setCopied] = useState(false);
@@ -61,14 +74,15 @@ function Contact() {
 
   const [values, setValues] = useState({ name: '', email: '', message: '' });
   const [touched, setTouched] = useState({});
-  const [state, setState] = useState('idle'); // idle | sending | sent | failed
+  const [state, setState] = useState('idle'); // idle | sending | sent | failed | limited
+  const [serverErrors, setServerErrors] = useState({});
   const [topic, setTopic] = useState(null);
   const [serviceLabel, setServiceLabel] = useState('');
   const prefilled = useRef('');
   const refs = { name: useRef(null), email: useRef(null), message: useRef(null) };
   const sending = useRef(false);
 
-  const errors = validate(values, isAr);
+  const errors = { ...serverErrors, ...validate(values, isAr) };
   const showError = (field) => touched[field] && errors[field];
 
   const topicLabel = topic === 'service' ? serviceLabel : topic ? TOPICS[topic][lang][0] : '';
@@ -81,7 +95,7 @@ function Contact() {
   const chooseTopic = (key, label = '') => {
     setTopic(key === 'general' ? null : key);
     if (key === 'service') setServiceLabel(label);
-    if (state === 'sent' || state === 'failed') setState('idle');
+    if (state === 'sent' || state === 'failed' || state === 'limited') setState('idle');
     // القرار يُتخذ خارج دالة التحديث: React (StrictMode) يستدعيها مرتين، وكانت الثانية ترى prefilled محدَّثاً
     // فتظن أن الزائر كتب النص بنفسه وتُبقي الاقتراح القديم
     if (values.message.trim() && values.message !== prefilled.current) return;
@@ -102,7 +116,10 @@ function Contact() {
     return () => window.removeEventListener(CONTACT_INTENT_EVENT, onIntent);
   });
 
-  const update = (field) => (e) => setValues(v => ({ ...v, [field]: e.target.value }));
+  const update = (field) => (e) => {
+    setValues(v => ({ ...v, [field]: e.target.value }));
+    if (serverErrors[field]) setServerErrors(({ [field]: _removed, ...rest }) => rest);
+  };
   const blur = (field) => () => setTouched(tc => ({ ...tc, [field]: true }));
 
   const handleSubmit = async (e) => {
@@ -114,21 +131,38 @@ function Contact() {
 
     sending.current = true;
     setState('sending');
-    const formData = new FormData(e.target);
-    formData.delete('topic-choice'); // اختيار الموضوع واجهة فقط؛ يصل الموضوع في _subject
+    setServerErrors({});
     try {
-      const response = await fetch(ENDPOINT, { method: 'POST', body: formData, headers: { Accept: 'application/json' } });
-      const body = await response.json().catch(() => ({}));
-      // formsubmit يعيد success: "false" أحياناً مع حالة 200
-      if (response.ok && String(body.success) !== 'false') {
-        setState('sent');
-        setValues({ name: '', email: '', message: '' });
-        setTouched({});
-        setTopic(null);
-        prefilled.current = '';
-      } else setState('failed');
-    } catch {
-      setState('failed');
+      await axiosClient.post('/contact-messages', {
+        name: values.name.trim(),
+        email: values.email.trim(),
+        message: values.message.trim(),
+        subject: topicLabel || null,
+        locale: isAr ? 'ar' : 'en',
+        website: e.target.elements.website?.value || '', // فخ الرسائل الآلية
+      });
+      setState('sent');
+      setValues({ name: '', email: '', message: '' });
+      setTouched({});
+      setTopic(null);
+      prefilled.current = '';
+    } catch (error) {
+      const status = error.response?.status;
+      if (status === 422) {
+        // نفس الحقول تقريباً تُفحص في الواجهة؛ هذا لما يرفضه الخادم وحده
+        const fieldErrors = Object.fromEntries(
+          Object.entries(getValidationErrors(error))
+            .filter(([key]) => ['name', 'email', 'message'].includes(key))
+            .map(([key, messages]) => [key, serverFieldText(key, [messages].flat()[0], isAr)]),
+        );
+        setServerErrors(fieldErrors);
+        setState('idle');
+        const firstField = ['name', 'email', 'message'].find(f => fieldErrors[f]);
+        if (firstField) refs[firstField].current?.focus();
+        else setState('failed');
+      } else {
+        setState(status === 429 ? 'limited' : 'failed');
+      }
     } finally {
       sending.current = false;
     }
@@ -191,10 +225,8 @@ function Contact() {
                 </motion.div>
               ) : (
                 <motion.form key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onSubmit={handleSubmit} noValidate aria-busy={state === 'sending'}>
-                  <input type="hidden" name="_template" value="table" />
-                  {topicLabel && <input type="hidden" name="_subject" value={`${isAr ? 'منارة — ' : 'Manara — '}${topicLabel}`} />}
-                  {/* فخ للرسائل الآلية: مخفي عن الزوار وقارئات الشاشة */}
-                  <input type="text" name="_honey" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden="true" />
+                  {/* فخ للرسائل الآلية: مخفي عن الزوار وقارئات الشاشة، والخادم يتجاهل أي رسالة تملؤه */}
+                  <input type="text" name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden="true" />
 
                   <fieldset>
                     <legend className="text-sm font-bold text-brand-purple mb-3">{isAr ? 'عمّ تودّ أن تكتب؟' : 'What is your message about?'}</legend>
@@ -217,29 +249,36 @@ function Contact() {
                   <div className="grid md:grid-cols-2 gap-5 mt-7">
                     <div>
                       <label htmlFor={`${uid}-name`} className="contact-label">{isAr ? 'الاسم' : 'Name'}</label>
-                      <input type="text" autoComplete="name" placeholder={t.namePlaceholder} {...field('name')} />
+                      <input type="text" autoComplete="name" maxLength={LIMITS.name} placeholder={t.namePlaceholder} {...field('name')} />
                       {errorText("name")}
                     </div>
                     <div>
                       <label htmlFor={`${uid}-email`} className="contact-label">{isAr ? 'البريد الإلكتروني' : 'Email'}</label>
-                      <input type="email" autoComplete="email" inputMode="email" dir="ltr" placeholder={t.emailPlaceholder} {...field('email')} />
+                      <input type="email" autoComplete="email" inputMode="email" dir="ltr" maxLength={LIMITS.email} placeholder={t.emailPlaceholder} {...field('email')} />
                       {errorText("email")}
                     </div>
                   </div>
                   <div className="mt-5">
                     <div className="flex items-baseline justify-between gap-3">
                       <label htmlFor={`${uid}-message`} className="contact-label">{isAr ? 'الرسالة' : 'Message'}</label>
-                      <span className="text-xs text-gray-400 tabular-nums" aria-hidden="true">{values.message.length}</span>
+                      <span className={`text-xs tabular-nums ${values.message.length > LIMITS.message * 0.9 ? 'text-brand-orange-dark' : 'text-gray-400'}`} aria-hidden="true">{values.message.length} / {LIMITS.message}</span>
                     </div>
-                    <textarea rows={6} placeholder={t.messagePlaceholder} {...field('message')} />
+                    <textarea rows={6} maxLength={LIMITS.message} placeholder={t.messagePlaceholder} {...field('message')} />
                     {errorText("message")}
                   </div>
+
+                  {state === 'limited' && (
+                    <div className="contact-failed" role="alert">
+                      <FiAlertCircle aria-hidden="true" className="shrink-0 mt-0.5" />
+                      <span>{isAr ? 'أرسلت عدة رسائل خلال وقت قصير. انتظر دقيقة ثم حاول مرة أخرى.' : 'You have sent several messages in a short time. Please wait a minute and try again.'}</span>
+                    </div>
+                  )}
 
                   {state === 'failed' && (
                     <div className="contact-failed" role="alert">
                       <FiAlertCircle aria-hidden="true" className="shrink-0 mt-0.5" />
                       <span>
-                        {isAr ? 'لم تُرسل الرسالة بسبب مشكلة في الاتصال. حاول مرة أخرى، أو ' : 'The message was not sent because of a connection problem. Try again, or '}
+                        {isAr ? 'لم تُرسل الرسالة بسبب مشكلة في الاتصال أو في الخادم. حاول مرة أخرى، أو ' : 'The message was not sent because of a connection or server problem. Try again, or '}
                         <a href={`mailto:${t.email}?body=${mailBody}`} className="underline font-semibold">{isAr ? 'أرسلها من بريدك مباشرة' : 'send it from your email app'}</a>.
                       </span>
                     </div>

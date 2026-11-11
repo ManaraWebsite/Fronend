@@ -1,6 +1,6 @@
 import React, { Suspense, useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { FiFileText, FiLayers, FiMic, FiImage, FiLogOut, FiMenu, FiX, FiExternalLink } from 'react-icons/fi';
+import { FiFileText, FiLayers, FiMic, FiImage, FiInbox, FiLogOut, FiMenu, FiX, FiExternalLink } from 'react-icons/fi';
 import axiosClient from './axiosClient';
 import { clearSession, isAdminUser } from '../lib/auth';
 
@@ -9,6 +9,7 @@ const navItems = [
   { to: '/admin/posts', label: 'Posts Management', icon: FiLayers },
   { to: '/admin/field-voices', label: 'Field Voices', icon: FiMic },
   { to: '/admin/moments', label: 'Real Moments', icon: FiImage },
+  { to: '/admin/messages', label: 'Contact Messages', icon: FiInbox },
 ];
 
 const AdminDashboard = () => {
