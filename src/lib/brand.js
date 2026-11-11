@@ -20,11 +20,15 @@ export function readingTime(text, isAr) {
   return minutes <= 10 ? `${minutes} دقائق قراءة` : `${minutes} دقيقة قراءة`;
 }
 
+// منسّق واحد لكل لغة: toLocaleDateString يبني منسّقاً جديداً (وبيانات اللغة) مع كل استدعاء، وكان ~100ms لبطاقات المنشورات على الهاتف
+const dateFormats = {};
 export function formatDate(value, isAr) {
   if (!value) return '';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '';
-  return date.toLocaleDateString(isAr ? 'ar-EG' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  const locale = isAr ? 'ar-EG' : 'en-US';
+  dateFormats[locale] ||= new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'long', day: 'numeric' });
+  return dateFormats[locale].format(date);
 }
 
 // مقتطف نظيف من نص المقال

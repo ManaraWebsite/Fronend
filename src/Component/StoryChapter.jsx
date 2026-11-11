@@ -1,6 +1,7 @@
 import React, { useLayoutEffect, useRef } from 'react';
 import { useReducedMotion, useScroll } from 'framer-motion';
 import { countWords, parseEmphasis, splitWords, wordScatter } from '../lib/clarity';
+import { pageTop, watchPageLayout } from '../lib/pageGeometry';
 
 // الكلمة هي أصغر وحدة تشتيت: تقسيم الحروف يقطع اتصال الحروف العربية.
 // العبارات المُبرَزة تُلفّ بـ <mark>، ويُرسم تحتها خط يمتد بعد أن تتضح كلماتها (--t لأول كلمة فيها).
@@ -117,6 +118,25 @@ export default function StoryChapter({ id, tone, beats, layoutKey, entry = false
       if (next !== pinTop) { pinTop = next; pin.current.style.top = next; }
     };
 
+    // الهندسة تُقاس عند تغيّر الأحجام فقط، والتمرير يحسب منها المواضع دون قراءة التخطيط (انظر lib/pageGeometry):
+    // أعلى الفصل بإحداثيات الصفحة وارتفاعه، ارتفاع البطاقة المثبّتة، وبُعد كل مجموعة عن أعلى البطاقة.
+    // البطاقة sticky: موضعها على الشاشة = موضعها الطبيعي (أعلى الفصل) حتى تبلغ قيمة top فتثبت، ولا تتجاوز نهاية الفصل.
+    const geo = { top: 0, height: 0, pinHeight: 0, offsets: new Map() };
+    let lastSide = null; // آخر جهة كان فيها الفصل بعيداً عن الشاشة (لا حاجة لإعادة الرسم ما دام بعيداً فيها)
+    const measureGeometry = () => {
+      geo.top = pageTop(section);
+      geo.height = section.offsetHeight;
+      geo.pinHeight = pin.current.offsetHeight;
+      const pinBox = pin.current.getBoundingClientRect().top;
+      groups.forEach(g => geo.offsets.set(g, g.el.getBoundingClientRect().top - pinBox));
+      lastSide = null;
+    };
+    const viewport = () => {
+      const top = geo.top - window.scrollY;
+      const pinned = Math.min(Math.max(top, parseFloat(pinTop) || 0), top + geo.height - geo.pinHeight);
+      return { top, bottom: top + geo.height, pinned };
+    };
+
     // البطاقة الأولى مخفية فوق الواجهة، وتظهر تدريجياً (مع تقليل الحركة أيضاً: تلاشٍ فقط)
     let shown = '';
     const fadeIn = (s) => {
@@ -127,10 +147,16 @@ export default function StoryChapter({ id, tone, beats, layoutKey, entry = false
 
     const paint = () => {
       const vh = window.innerHeight;
-      const rect = section.getBoundingClientRect();
+      const rect = viewport();
+      const near = rect.top < vh * 1.6 && rect.bottom > -vh * 0.2;
+      // بعيد عن الشاشة: كل القيم ثابتة عند طرفيها (0 أو 1) ما دام في الجهة نفسها، فلا داعي لإعادة حسابها
+      if (!near) {
+        const side = rect.top > 0 ? 'below' : 'above';
+        if (side === lastSide) return;
+        lastSide = side;
+      } else lastSide = null;
       fadeIn(-rect.top / vh);
       if (reduced) return;
-      const near = rect.top < vh * 1.6 && rect.bottom > -vh * 0.2;
       const s = -rect.top / vh - (entry ? ENTRY_SHIFT : 0);
       const last = beats - 1;
       let best = 0;
@@ -139,7 +165,7 @@ export default function StoryChapter({ id, tone, beats, layoutKey, entry = false
         if (g.beat < 0) { setGroup(g, clamp01((s + 0.35) / 0.5), near, ''); return; }
         const i = g.beat;
         if (!staged) {
-          const top = g.el.getBoundingClientRect().top;
+          const top = rect.pinned + (geo.offsets.get(g) ?? 0);
           setGroup(g, clamp01((vh * 0.92 - top) / (vh * 0.45)), near, '');
           return;
         }
@@ -173,17 +199,22 @@ export default function StoryChapter({ id, tone, beats, layoutKey, entry = false
     };
 
     if (reduced) groups.forEach(g => { g.clear = true; g.el.classList.add('is-clear'); });
-    const layout = () => { measure(); fit(); paint(); };
-    const observer = new ResizeObserver(() => { fit(); paint(); });
+    const layout = () => { measure(); fit(); measureGeometry(); paint(); };
+    const observer = new ResizeObserver(() => { fit(); measureGeometry(); paint(); });
     observer.observe(pin.current);
-    window.addEventListener('resize', layout);
     card.addEventListener('focusin', onFocus);
-    layout();
+    // تغيّر حجم النافذة يعيد القياس كاملاً؛ تغيّر ارتفاع الصفحة (فصل سابق، محتوى من الـ API) يغيّر موضع الفصل فقط
+    let first = true;
+    window.addEventListener('resize', layout);
+    const unwatch = watchPageLayout(() => {
+      if (first) { first = false; layout(); return; }
+      measureGeometry(); paint();
+    });
     // الخط النهائي يغيّر ارتفاع النص؛ نعيد القياس بعد تحميله
     document.fonts?.ready.then(() => { if (copy.current) layout(); });
     const unsubscribe = scrollY.on('change', paint);
     return () => {
-      unsubscribe(); observer.disconnect();
+      unsubscribe(); observer.disconnect(); unwatch();
       window.removeEventListener('resize', layout); card.removeEventListener('focusin', onFocus);
       groups.forEach(g => { g.el.classList.add('is-clear'); g.el.style.opacity = ''; });
       card.style.opacity = '';

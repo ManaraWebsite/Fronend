@@ -51,6 +51,14 @@ function HeroSection({ ready = true }) {
     return () => { observer.disconnect(); unsubscribe(); window.removeEventListener('resize', measure); };
   }, [journey, scrollYProgress, lang]);
   const background = useTransform(journey, v => `color-mix(in srgb-linear, var(--color-brand-story-dark), var(--color-story-lit) ${storyState(v).light * 100}%)`);
+  // لون الحكاية يُكتب على بطاقات الفصول وحدها (متغيّر غير موروث، انظر --chapter-bg في index.css)، لا على جذر الحكاية:
+  // تغيير متغيّر موروث على الجذر في كل إطار كان يعيد حساب أنماط كل الكلمات المتحركة تحته
+  useEffect(() => {
+    const root = sectionRef.current;
+    const paint = (value) => root.querySelectorAll('.manara-chapter-copy').forEach(el => el.style.setProperty('--chapter-bg', value));
+    paint(background.get());
+    return background.on('change', paint);
+  }, [background, lang]);
   // الانتقال من الواجهة إلى الحكاية على خط زمني واحد (journey) مع الكاميرا والضوء:
   // نص الواجهة مثبّت في مكانه ويذوب (يتلاشى ويرتفع قليلاً ويتشوّش كأن الكاميرا تعبره) بين 0 و0.45 من الطريق إلى الفصل الأول،
   // بينما تظهر بطاقة الفصل الأول في موضعها نفسه. مع تقليل الحركة يبقى التلاشي فقط.
@@ -94,7 +102,6 @@ function HeroSection({ ready = true }) {
 
   return (
     <motion.div
-      style={{ '--story-background': background }}
       ref={sectionRef}
       className="manara-journey relative isolate bg-brand-night"
     >
@@ -119,7 +126,7 @@ function HeroSection({ ready = true }) {
           onFail={handleFail}
         />
       ) : (
-        <StoryFallback ready={ready} isAr={isAr} progress={journey} />
+        <StoryFallback ready={ready} isAr={isAr} progress={journey} background={background} />
       )}
 
       </div>

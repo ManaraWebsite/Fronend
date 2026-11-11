@@ -5,6 +5,8 @@ import axiosClient from '../Api/axiosClient';
 export const resolveMediaUrl = (path) => {
   if (!path || typeof path !== 'string') return null;
   if (/^(https?:)?\/\//.test(path) || path.startsWith('blob:') || path.startsWith('data:')) return path;
+  // صور «لحظات حقيقية» الأصلية تُخدم من الواجهة نفسها (public/media)
+  if (path.startsWith('/media/')) return path;
 
   const apiBase = axiosClient.defaults.baseURL || '/api';
   const origin = apiBase.replace(/\/api\/?$/, '');

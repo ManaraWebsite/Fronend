@@ -2,11 +2,10 @@ import React, { useCallback, useContext, useEffect, useLayoutEffect, useRef, use
 import { useReducedMotion, useScroll } from 'framer-motion';
 import { FiArrowDown, FiPlay } from 'react-icons/fi';
 import { LanguageContext } from '../LanguageContext';
-import {
-  ACTIVITY_NAMES, APERTURE_WORDS, RIBBON, films, imageSrcSet, mediaUrl, morePhotos, strip,
-} from '../content/activities';
+import { APERTURE_WORDS, mediaUrl } from '../content/activities';
 import MediaLightbox from './MediaLightbox';
 import { createAperture } from '../lib/apertureGL';
+import { useMoments } from '../hooks/useMoments';
 
 // «لحظات حقيقية» — تجربة مثبّتة يتحكم بها التمرير وحده (لا مؤقتات)، بأربع مراحل متتالية:
 //   1) النافذة: العنوان الكبير يبدأ نصاً أبيض عادياً، ومع بداية التمرير تملأ صورة الافتتاح حروفه وتظهر حولها خطوط الكنتور،
@@ -19,6 +18,8 @@ import { createAperture } from '../lib/apertureGL';
 // كل الحالات دالة في موضع التمرير u (بوحدة ارتفاع الشاشة داخل المسار)، فالرجوع للأعلى يعكسها تماماً.
 // بعد انتهاء التثبيت تبدأ المرحلة الثانية (بقية اللقطات والأفلام) بترقيم يكمل ترقيم الشريط.
 // مع تقليل الحركة: نسخة ثابتة (عنوان، شريط قابل للتمرير الأفقي، ثم المرحلة الثانية).
+// المحتوى من لوحة التحكم (useMoments): اختيار عشوائي جديد من 10 صور على الأكثر في كل زيارة، تُوزَّع على الشريط
+// والمرحلة الثانية، والمقاطع بينها (buildMoments في content/activities.js).
 
 const RINGS = 6; // خطوط الكنتور حول النافذة
 const T = {
@@ -43,7 +44,8 @@ const span = (u, [a, b]) => clamp01((u - a) / (b - a));
 const lerp = (a, b, t) => a + (b - a) * t;
 const two = (n) => String(n).padStart(2, '0');
 
-function LoopVideo({ src, active }) {
+// الملصق (poster) يُحمَّل فور وجود الفيديو في الصفحة رغم preload="none"، فلا يُعطى إلا حين يقترب القسم (awake)
+function LoopVideo({ src, active, awake = true }) {
   const video = useRef(null);
   useEffect(() => {
     const el = video.current;
@@ -51,18 +53,18 @@ function LoopVideo({ src, active }) {
     if (active) el.play().catch(() => {});
     else el.pause();
   }, [active]);
-  return <video ref={video} src={mediaUrl(src, '/loop.mp4')} poster={mediaUrl(src, '/loop-poster.webp')} muted loop playsInline preload="none" disablePictureInPicture aria-hidden="true" />;
+  return <video ref={video} src={mediaUrl(src, '/loop.mp4')} poster={awake ? mediaUrl(src, '/loop-poster.webp') : undefined} muted loop playsInline preload="none" disablePictureInPicture aria-hidden="true" />;
 }
 
 // فك ترميز متزامن: لقطات الشريط تتحرك بالتحويلات، ومع القفز بعيداً في التمرير (رابط، End، سحب شريط التمرير)
 // كان الفك غير المتزامن يترك أجزاء من الصورة غير مرسومة
-function FrameMedia({ item, lang, active, sizes }) {
-  if (item.type === 'loop') return <LoopVideo src={item.src} active={active} />;
+function FrameMedia({ item, lang, active, sizes, awake }) {
+  if (item.type === 'loop') return <LoopVideo src={item.src} active={active} awake={awake} />;
   return (
     <img
-      src={mediaUrl(item.src, '-800.webp')}
-      srcSet={imageSrcSet(item.src)}
-      sizes={sizes}
+      src={item.srcSet ? item.thumb : item.src}
+      srcSet={item.srcSet}
+      sizes={item.srcSet ? sizes : undefined}
       alt={item.alt[lang]}
       loading="lazy"
       decoding="sync"
@@ -84,17 +86,20 @@ function useNarrow() {
   return narrow;
 }
 
-function Ribbon({ current, lang }) {
+function Ribbon({ current, lang, ribbon, names }) {
   return (
     <ol className="reel-ribbon">
-      {RIBBON.map((key) => (
-        <li key={key} className={key === current ? 'is-on' : ''}>{ACTIVITY_NAMES[key][lang]}</li>
+      {ribbon.map((key) => (
+        <li key={key} className={key === current ? 'is-on' : ''}>{names[key][lang]}</li>
       ))}
     </ol>
   );
 }
 
-function PinnedReel({ lang, isAr, onOpen }) {
+// صورة مصغّرة للخلفية والعارض: ملصق المقطع أو أصغر نسخة من الصورة
+const posterOf = (item) => (item.type === 'loop' ? mediaUrl(item.src, '/loop-poster.webp') : item.thumb);
+
+function PinnedReel({ lang, isAr, onOpen, strip, ribbon, names }) {
   const narrow = useNarrow();
   const words = APERTURE_WORDS[lang][narrow ? 'narrow' : 'wide'];
   const track = useRef(null);
@@ -116,14 +121,28 @@ function PinnedReel({ lang, isAr, onOpen }) {
   const currentRef = useRef(0);
   const { scrollYProgress } = useScroll({ target: track, offset: ['start start', 'end end'] });
 
+  // القسم بعيد أسفل الصفحة: سياق WebGL الثاني وصورة الافتتاح (1600px) وملصقات المقاطع تُنشأ حين يقترب فقط،
+  // لا مع تحميل الصفحة (كانت تزاحم المشهد ثلاثي الأبعاد وتحميل الواجهة على الهاتف)
+  const [awake, setAwake] = useState(false);
+  useEffect(() => {
+    const io = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return;
+      setAwake(true);
+      io.disconnect();
+    }, { rootMargin: '200% 0px' });
+    io.observe(track.current);
+    return () => io.disconnect();
+  }, []);
+
   // النافذة بـ WebGL2 (src/lib/apertureGL.js)؛ إن تعذّر: إطار مستدير بسيط يتسع (clip-path) دون الحروف
   useEffect(() => {
-    const ap = canvas.current ? createAperture(canvas.current, { photoUrl: mediaUrl(strip[0].src, '-1600.webp') }) : null;
+    if (!awake) return undefined;
+    const ap = canvas.current ? createAperture(canvas.current, { photoUrl: strip[0].src }) : null;
     if (!ap) setGlOk(false);
     aperture.current = ap;
     setApReady(Boolean(ap)); // يعيد القياس بعد إنشاء النافذة (القياس الأول يسبقها)
     return () => { ap?.dispose(); aperture.current = null; };
-  }, []);
+  }, [strip, awake]);
 
   // القياس: العنوان (حجم الخط وحقل المسافات)، ومواضع لقطات الشريط، وطول المسار
   const measure = useCallback(() => {
@@ -160,7 +179,7 @@ function PinnedReel({ lang, isAr, onOpen }) {
     const total = T.travel + travelU + T.tail;
     layoutRef.current = { ...prev, W, H, M, FH, slots, centers, segs, travelU, total, font, box };
     setTrackH(Math.round((total + 1) * H));
-  }, [narrow]);
+  }, [narrow, strip]);
 
   // بناء العنوان وحقل المسافات (~0.3 ثانية مرة واحدة): مؤجَّل حتى يقترب القسم من الشاشة، فلا يؤخر تحميل الصفحة،
   // ويُعاد بعد انتهاء تغيير حجم النافذة أو تبديل اللغة فقط
@@ -321,7 +340,7 @@ function PinnedReel({ lang, isAr, onOpen }) {
       f.width = `${slots[nextCurrent].w.toFixed(1)}px`;
     }
     if (nextCurrent !== currentRef.current) { currentRef.current = nextCurrent; setCurrent(nextCurrent); }
-  }, [isAr, scrollYProgress, trackH]);
+  }, [isAr, scrollYProgress, trackH, strip]);
 
   useEffect(() => {
     render();
@@ -330,13 +349,13 @@ function PinnedReel({ lang, isAr, onOpen }) {
 
   const { H } = size;
   const item = strip[current];
-  const label = (i) => `${two(i + 1)} / ${two(strip.length)} · ${ACTIVITY_NAMES[strip[i].activity][lang]}`;
+  const label = (i) => `${two(i + 1)} / ${two(strip.length)} · ${names[strip[i].activity][lang]}`;
 
   return (
     <div ref={track} className="reel-track" style={{ height: trackH ? `${trackH}px` : '500vh' }}>
       <div className="reel-stage" style={{ height: H ? `${H}px` : '100vh' }}>
         <div ref={night} className="reel-night" aria-hidden="true">
-          <img key={item.src} className="reel-glow" src={item.type === 'loop' ? mediaUrl(item.src, '/loop-poster.webp') : mediaUrl(item.src, '-800.webp')} alt="" />
+          {awake && <img key={item.src} className="reel-glow" src={posterOf(item)} alt="" decoding="async" />}
         </div>
 
         {/* 1) النافذة */}
@@ -344,7 +363,7 @@ function PinnedReel({ lang, isAr, onOpen }) {
           <canvas ref={canvas} className="reel-aperture" aria-hidden="true" />
         ) : (
           <div ref={fallback} className="reel-aperture reel-aperture--fallback" aria-hidden="true">
-            <img ref={fallbackImg} src={mediaUrl(strip[0].src, '-1600.webp')} alt="" />
+            <img ref={fallbackImg} src={strip[0].src} alt="" />
           </div>
         )}
         <div ref={cue} className="reel-cue">
@@ -355,7 +374,7 @@ function PinnedReel({ lang, isAr, onOpen }) {
         {/* 3–4) العنوان وشريط الأنشطة */}
         <header ref={(el) => { ui.current[0] = el; }} className="reel-head">
           <h2 id="moments-title" className="reel-title">{isAr ? 'لحظات حقيقية' : 'Real moments'}</h2>
-          <Ribbon current={item.activity} lang={lang} />
+          <Ribbon current={item.activity} lang={lang} ribbon={ribbon} names={names} />
         </header>
 
         <ul className="reel-frames">
@@ -366,14 +385,14 @@ function PinnedReel({ lang, isAr, onOpen }) {
               className={`reel-frame${i === 0 ? ' reel-frame--lead' : ''}${i === current ? ' is-current' : ''}`}
               style={{ zIndex: i === 0 ? strip.length + 1 : strip.length - i }}
             >
-              <button type="button" className="reel-frame-media" onClick={(e) => onOpen('strip', i, e.currentTarget)} aria-label={`${it.alt[lang]} — ${ACTIVITY_NAMES[it.activity][lang]}`}>
-                <FrameMedia item={it} lang={lang} active={i === current} sizes={i === 0 ? '100vw' : '(min-width: 768px) 40vw, 80vw'} />
+              <button type="button" className="reel-frame-media" onClick={(e) => onOpen('strip', i, e.currentTarget)} aria-label={`${it.alt[lang]} — ${names[it.activity][lang]}`}>
+                <FrameMedia item={it} lang={lang} active={i === current} awake={awake} sizes={i === 0 ? '100vw' : '(min-width: 768px) 40vw, 80vw'} />
                 {it.type === 'loop' && <span className="reel-play" aria-hidden="true"><FiPlay /></span>}
               </button>
               {/* زوايا ووسم اللقطة الأولى وهي تملأ الشاشة؛ في الشريط يتسلّمهما المُعايِن الثابت */}
               {i === 0 && <span className="reel-corners" aria-hidden="true"><i /><i /><i /><i /></span>}
               {i === 0 && <span className="reel-tag" aria-hidden="true">{label(i)}</span>}
-              <span className="reel-caption" aria-hidden="true">{ACTIVITY_NAMES[it.activity][lang]}</span>
+              <span className="reel-caption" aria-hidden="true">{names[it.activity][lang]}</span>
             </li>
           ))}
         </ul>
@@ -383,7 +402,7 @@ function PinnedReel({ lang, isAr, onOpen }) {
         </div>
 
         <footer ref={(el) => { ui.current[1] = el; }} className="reel-foot">
-          <p className="reel-foot-name" aria-live="polite">{ACTIVITY_NAMES[item.activity][lang]}</p>
+          <p className="reel-foot-name" aria-live="polite">{names[item.activity][lang]}</p>
           <a href="#moments-more" className="reel-foot-link">{isAr ? 'كل اللقطات والأفلام' : 'All moments & films'} <FiArrowDown aria-hidden="true" /></a>
         </footer>
       </div>
@@ -392,24 +411,24 @@ function PinnedReel({ lang, isAr, onOpen }) {
 }
 
 // نسخة ثابتة مع تقليل الحركة: لا تثبيت ولا تحريك، والشريط يُمرَّر أفقياً
-function StaticReel({ lang, isAr, onOpen }) {
+function StaticReel({ lang, isAr, onOpen, strip, ribbon, names }) {
   return (
     <div className="reel-static">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <p className="reel-label">{isAr ? 'من أنشطتنا' : 'From our activities'}</p>
         <h2 id="moments-title" className="reel-title mt-3">{isAr ? 'لحظات حقيقية' : 'Real moments'}</h2>
-        <Ribbon current={null} lang={lang} />
+        <Ribbon current={null} lang={lang} ribbon={ribbon} names={names} />
       </div>
       <ul className="reel-static-strip">
         {strip.map((it, i) => (
           <li key={it.src} className="reel-frame is-static" style={{ '--ar': it.ar }}>
-            <button type="button" className="reel-frame-media" onClick={(e) => onOpen('strip', i, e.currentTarget)} aria-label={`${it.alt[lang]} — ${ACTIVITY_NAMES[it.activity][lang]}`}>
+            <button type="button" className="reel-frame-media" onClick={(e) => onOpen('strip', i, e.currentTarget)} aria-label={`${it.alt[lang]} — ${names[it.activity][lang]}`}>
               {it.type === 'loop'
                 ? <img src={mediaUrl(it.src, '/loop-poster.webp')} alt="" loading="lazy" />
                 : <FrameMedia item={it} lang={lang} active={false} sizes="(min-width: 768px) 40vw, 80vw" />}
               {it.type === 'loop' && <span className="reel-play" aria-hidden="true"><FiPlay /></span>}
             </button>
-            <span className="reel-caption">{ACTIVITY_NAMES[it.activity][lang]}</span>
+            <span className="reel-caption">{names[it.activity][lang]}</span>
           </li>
         ))}
       </ul>
@@ -417,23 +436,61 @@ function StaticReel({ lang, isAr, onOpen }) {
   );
 }
 
-// المرحلة الثانية: بقية اللقطات بتكوين تحريري غير متماثل (تحت كل صورة اسم ورشتها)، ثم الأفلام الكاملة
-function MoreMoments({ lang, isAr, onOpen }) {
+// قبل وصول الاختيار، أو إن لم توجد صور منشورة، أو تعذّر التحميل: العنوان مع رسالة قصيرة بدل الشريط
+function MomentsStatus({ status, isAr, onRetry }) {
+  const text = {
+    loading: isAr ? 'جارٍ تحميل اللقطات…' : 'Loading moments…',
+    empty: isAr ? 'لا توجد لقطات منشورة حالياً.' : 'No moments have been published yet.',
+    error: isAr ? 'تعذّر تحميل اللقطات.' : 'The moments could not be loaded.',
+  }[status];
+  return (
+    <div className="reel-static reel-status" aria-busy={status === 'loading'}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <p className="reel-label">{isAr ? 'من أنشطتنا' : 'From our activities'}</p>
+        <h2 id="moments-title" className="reel-title mt-3">{isAr ? 'لحظات حقيقية' : 'Real moments'}</h2>
+        <p className="reel-status-text" role={status === 'error' ? 'alert' : 'status'}>
+          {status === 'loading' && <span className="reel-status-spinner" aria-hidden="true" />}
+          {text}
+          {status === 'error' && (
+            <button type="button" className="reel-status-retry" onClick={onRetry}>{isAr ? 'إعادة المحاولة' : 'Try again'}</button>
+          )}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// المرحلة الثانية: بقية اللقطات بتكوين تحريري غير متماثل (تحت كل صورة اسم ورشتها)، ثم الأفلام الكاملة.
+// كل الصور الأخرى بترتيب عشوائي، تظهر على دفعات حتى لا تُحمَّل مكتبة كبيرة دفعة واحدة
+const MORE_STEP = 12;
+
+function MoreMoments({ lang, isAr, onOpen, more, films, names }) {
+  const [shown, setShown] = useState(MORE_STEP);
+  if (more.length === 0 && films.length === 0) return null;
+  const left = more.length - shown;
   return (
     <div id="moments-more" className="reel-more">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <ul className="reel-more-grid">
-          {morePhotos.map((it, i) => (
+        {more.length > 0 && <ul className="reel-more-grid">
+          {more.slice(0, shown).map((it, i) => (
             <li key={it.src} className={`reel-more-item reel-more-item--${i + 1}`} style={{ '--ar': it.ar }}>
-              <button type="button" className="reel-frame-media" onClick={(e) => onOpen('more', i, e.currentTarget)} aria-label={`${it.alt[lang]} — ${ACTIVITY_NAMES[it.activity][lang]}`}>
-                <img src={mediaUrl(it.src, '-800.webp')} srcSet={imageSrcSet(it.src)} sizes="(min-width: 1024px) 45vw, 92vw" alt={it.alt[lang]} loading="lazy" decoding="async" style={{ objectPosition: it.pos }} />
+              <button type="button" className="reel-frame-media" onClick={(e) => onOpen('more', i, e.currentTarget)} aria-label={`${it.alt[lang]} — ${names[it.activity][lang]}`}>
+                <img src={it.srcSet ? it.thumb : it.src} srcSet={it.srcSet} sizes={it.srcSet ? '(min-width: 1024px) 45vw, 92vw' : undefined} alt={it.alt[lang]} loading="lazy" decoding="async" style={{ objectPosition: it.pos }} />
               </button>
-              <span className="reel-caption">{ACTIVITY_NAMES[it.activity][lang]}</span>
+              <span className="reel-caption">{names[it.activity][lang]}</span>
             </li>
           ))}
-        </ul>
+        </ul>}
+        {left > 0 && (
+          <div className="reel-more-actions">
+            <button type="button" className="reel-more-button" onClick={() => setShown((n) => n + MORE_STEP)}>
+              {isAr ? `عرض المزيد من الصور (${left})` : `Show more photos (${left})`}
+              <FiArrowDown aria-hidden="true" />
+            </button>
+          </div>
+        )}
 
-        <div className="reel-films">
+        {films.length > 0 && <div className="reel-films">
           <p className="reel-films-label">{isAr ? 'أفلام قصيرة' : 'Short films'}</p>
           <ul>
             {films.map((f, i) => (
@@ -441,12 +498,12 @@ function MoreMoments({ lang, isAr, onOpen }) {
                 <button type="button" className="reel-film" onClick={(e) => onOpen('film', i, e.currentTarget)} aria-label={`${isAr ? 'شاهد' : 'Watch'}: ${f.alt[lang]}`}>
                   <img src={mediaUrl(f.src, '-poster.webp')} alt="" loading="lazy" decoding="async" />
                   <span className="reel-film-play" aria-hidden="true"><FiPlay /></span>
-                  <span className="reel-film-meta"><strong>{ACTIVITY_NAMES[f.activity][lang]}</strong><span>{f.duration}</span></span>
+                  <span className="reel-film-meta"><strong>{names[f.activity][lang]}</strong><span>{f.duration}</span></span>
                 </button>
               </li>
             ))}
           </ul>
-        </div>
+        </div>}
       </div>
     </div>
   );
@@ -456,19 +513,20 @@ export default function Activities() {
   const { lang } = useContext(LanguageContext);
   const isAr = lang === 'AR';
   const reduced = useReducedMotion();
+  const { moments, status, retry } = useMoments();
   const [viewer, setViewer] = useState({ activity: null, index: null, autoPlay: false });
   const trigger = useRef(null);
 
-  // كل مجموعة تُفتح في العارض بعناصرها: لقطات الشريط، بقية اللقطات، أو فيلم واحد بالصوت
+  // الفيلم أو المقطع يُفتح وحده بالصوت؛ الصورة تُفتح بين كل صور الاختيار الحالي (الشريط ثم بقية اللقطات)
   const open = (group, index, from) => {
+    const { strip, more, photos, films, names } = moments;
     trigger.current = from;
-    const asVideo = (src, it) => ({ activity: { id: src, title: ACTIVITY_NAMES[it.activity], media: [{ type: 'video', src, alt: it.alt }] }, index: 0, autoPlay: true });
+    const asVideo = (src, it) => ({ activity: { id: src, title: names[it.activity], media: [{ type: 'video', src, alt: it.alt }] }, index: 0, autoPlay: true });
     if (group === 'film') { setViewer(asVideo(films[index].src, films[index])); return; }
     if (group === 'strip' && strip[index].type === 'loop') { setViewer(asVideo(strip[index].reel, strip[index])); return; }
-    const toImage = (it) => ({ type: 'image', src: it.src, w: it.ar >= 1 ? 1600 : 1200, h: it.ar >= 1 ? 1200 : 1600, alt: it.alt });
-    const list = group === 'strip' ? strip.filter((it) => it.type === 'image') : morePhotos;
-    const target = group === 'strip' ? strip[index] : morePhotos[index];
-    setViewer({ activity: { id: group, title: { AR: 'لحظات حقيقية', EN: 'Real moments' }, media: list.map(toImage) }, index: list.indexOf(target), autoPlay: false });
+    const toImage = (it) => ({ type: 'image', src: it.src, srcSet: it.srcSet, thumb: it.thumb, w: 1600, h: Math.round(1600 / it.ar), alt: it.alt });
+    const target = group === 'strip' ? strip[index] : more[index];
+    setViewer({ activity: { id: 'moments', title: { AR: 'لحظات حقيقية', EN: 'Real moments' }, media: photos.map(toImage) }, index: photos.indexOf(target), autoPlay: false });
   };
   const close = () => {
     setViewer((v) => ({ ...v, index: null }));
@@ -477,8 +535,17 @@ export default function Activities() {
 
   return (
     <section id="activities" className="reel-section" aria-labelledby="moments-title" dir={isAr ? 'rtl' : 'ltr'}>
-      {reduced ? <StaticReel lang={lang} isAr={isAr} onOpen={open} /> : <PinnedReel lang={lang} isAr={isAr} onOpen={open} />}
-      <MoreMoments lang={lang} isAr={isAr} onOpen={open} />
+      {status !== 'ready' ? (
+        <MomentsStatus status={status} isAr={isAr} onRetry={retry} />
+      ) : reduced ? (
+        <StaticReel lang={lang} isAr={isAr} onOpen={open} strip={moments.strip} ribbon={moments.ribbon} names={moments.names} />
+      ) : (
+        // نافذة الافتتاح والقياسات تُبنى من الشريط، فاختيار جديد يعيد إنشاءها
+        <PinnedReel key={moments.strip.map((it) => it.src).join('|')} lang={lang} isAr={isAr} onOpen={open} strip={moments.strip} ribbon={moments.ribbon} names={moments.names} />
+      )}
+      {moments && status !== 'loading' && (
+        <MoreMoments lang={lang} isAr={isAr} onOpen={open} more={moments.more} films={moments.films} names={moments.names} />
+      )}
       <MediaLightbox
         activity={viewer.activity}
         index={viewer.index}

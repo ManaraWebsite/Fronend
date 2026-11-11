@@ -919,7 +919,9 @@ export function createHeroScene(container, { mirrored = false, reducedMotion = f
   let height = 1;
   const heroOffset = { x: 0, y: 0 };
   let mobileComp = 0.5;
-  const isMobile = () => window.matchMedia('(max-width: 1023px)').matches;
+  // قائمة استعلام واحدة: matchMedia() جديدة في كل إطار كانت تكلّف ~100ms أثناء التمرير على معالج مُبطّأ
+  const mobileQuery = window.matchMedia('(max-width: 1023px)');
+  const isMobile = () => mobileQuery.matches;
   // موضع المنارة الأفقي في الواجهة: 25% (عربي) ← 75% (إنجليزي) على الشاشات العريضة، والوسط على الهاتف
   const compX = () => (isMobile() ? mobileComp : 0.5 - 0.25 * sideNow);
   function updateHeroOffset() {

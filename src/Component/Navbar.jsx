@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { LanguageContext } from '../LanguageContext';
 import { HiMenu, HiX } from 'react-icons/hi';
 import SectionLink from './SectionLink';
+import { pageTop, watchPageLayout } from '../lib/pageGeometry';
 
 // activities و contact يُتتبَّعان دون رابط في القائمة: عند الوصول إليهما لا يبقى الرابط السابق مميَّزاً
 const SECTION_IDS = ['home', 'workshops', 'services', 'activities', 'stories', 'posts', 'contact'];
@@ -29,22 +30,26 @@ function Navbar() {
   useEffect(() => {
     if (pathname !== '/') { setHidden(false); return undefined; }
     let raf = 0;
+    // نهاية الحكاية بإحداثيات الصفحة، تُقاس عند تغيّر الأحجام فقط (انظر lib/pageGeometry)
+    let journeyBottom = null;
     const check = () => {
       raf = 0;
-      const journey = document.querySelector('.manara-journey');
       // يختفي مع بداية ذوبان الواجهة في الحكاية (ربع شاشة من التمرير)، ويعود حين يبدأ قسم الورش بالصعود فوق مشهد الختام
-      setHidden(Boolean(journey)
+      setHidden(journeyBottom !== null
         && window.scrollY > window.innerHeight * 0.25
-        && journey.getBoundingClientRect().bottom > window.innerHeight * 1.1);
+        && journeyBottom - window.scrollY > window.innerHeight * 1.1);
     };
     const schedule = () => { if (!raf) raf = requestAnimationFrame(check); };
-    check();
+    const unwatch = watchPageLayout(() => {
+      const journey = document.querySelector('.manara-journey');
+      journeyBottom = journey ? pageTop(journey) + journey.offsetHeight : null;
+      check();
+    });
     window.addEventListener('scroll', schedule, { passive: true });
-    window.addEventListener('resize', schedule);
     return () => {
       cancelAnimationFrame(raf);
+      unwatch();
       window.removeEventListener('scroll', schedule);
-      window.removeEventListener('resize', schedule);
     };
   }, [pathname]);
   useEffect(() => { if (hidden) setIsOpen(false); }, [hidden]);
@@ -71,33 +76,36 @@ function Navbar() {
   useEffect(() => {
     if (pathname !== '/') return undefined;
     let raf = 0;
+    // أعلى كل قسم بإحداثيات الصفحة (بعض الأقسام لا تظهر إلا بعد تحميل بياناتها) وارتفاع الصفحة،
+    // تُقاس عند تغيّر الأحجام فقط؛ التمرير يقارنها بـ scrollY دون أي قراءة للتخطيط
+    let tops = [];
+    let pageHeight = 0;
     const update = () => {
       raf = 0;
       if (Date.now() < clickLock.current) return;
-      const line = window.innerHeight * 0.35;
+      const y = window.scrollY;
+      const line = y + window.innerHeight * 0.35;
       let current = 'home';
-      SECTION_IDS.forEach((id) => {
-        const section = document.getElementById(id); // بعض الأقسام لا تظهر إلا بعد تحميل بياناتها
-        if (section && section.getBoundingClientRect().top <= line) current = id;
-      });
+      tops.forEach(([id, top]) => { if (top <= line) current = id; });
       // آخر الصفحة: القسم الأخير قد لا يبلغ خط القراءة أبداً
-      if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) {
-        const last = [...SECTION_IDS].reverse().find(id => document.getElementById(id));
-        if (last && document.getElementById(last).getBoundingClientRect().top < window.innerHeight) current = last;
-      }
+      const last = tops[tops.length - 1];
+      if (last && y + window.innerHeight >= pageHeight - 4 && last[1] < y + window.innerHeight) current = last[0];
       setTrackedSection(current);
     };
     const schedule = () => { if (!raf) raf = requestAnimationFrame(update); };
     // عند انتهاء التمرير الناتج عن النقر نُعيد الحساب من الموضع الفعلي
     const onScrollEnd = () => { clickLock.current = 0; schedule(); };
-    update();
+    const unwatch = watchPageLayout(() => {
+      tops = SECTION_IDS.map(id => document.getElementById(id)).filter(Boolean).map(el => [el.id, pageTop(el)]);
+      pageHeight = document.documentElement.scrollHeight;
+      update();
+    });
     window.addEventListener('scroll', schedule, { passive: true });
-    window.addEventListener('resize', schedule);
     window.addEventListener('scrollend', onScrollEnd);
     return () => {
       cancelAnimationFrame(raf);
+      unwatch();
       window.removeEventListener('scroll', schedule);
-      window.removeEventListener('resize', schedule);
       window.removeEventListener('scrollend', onScrollEnd);
     };
   }, [pathname]);
@@ -112,7 +120,7 @@ function Navbar() {
   `;
 
   return (
-    <nav inert={hidden} className={`fixed top-4 left-0 right-0 w-[89%] mx-auto z-50 rounded-[50px] bg-brand-purple-dark/80 backdrop-blur-md border border-white/10 shadow-lg transition-[transform,opacity] duration-500 ease-out motion-reduce:transition-none ${hidden ? '-translate-y-[160%] opacity-0 pointer-events-none' : ''}`} aria-label={isAr ? 'التنقل الرئيسي' : 'Main navigation'}>
+    <nav inert={hidden} className={`fixed top-4 left-0 right-0 w-[89%] mx-auto z-50 rounded-[50px] bg-brand-purple-dark/90 lg:bg-brand-purple-dark/80 lg:backdrop-blur-md border border-white/10 shadow-lg transition-[transform,opacity] duration-500 ease-out motion-reduce:transition-none ${hidden ? '-translate-y-[160%] opacity-0 pointer-events-none' : ''}`} aria-label={isAr ? 'التنقل الرئيسي' : 'Main navigation'}>
       <div className="container mx-auto px-6 py-4 flex justify-between items-center flex-row" dir="rtl">
 
         {/* 1. الشعار */}

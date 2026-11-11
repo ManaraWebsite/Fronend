@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { FiChevronLeft, FiChevronRight, FiX, FiPlay, FiAlertCircle } from 'react-icons/fi';
-import { imageSrcSet, mediaUrl } from '../content/activities';
+import { mediaUrl } from '../content/activities';
 
-// عارض الصور والفيديو لنشاط واحد: <dialog> أصلي (Esc والتركيز ومنع التفاعل مع الخلفية من المتصفح)،
+// عارض الصور والفيديو لنشاط واحد (الصورة: src رابطها الكامل، و srcSet و thumb إن وُجدا): <dialog> أصلي (Esc والتركيز ومنع التفاعل مع الخلفية من المتصفح)،
 // الأسهم/السحب للتنقل، ومصغّرات أسفل العارض. الفيديو لا يعمل تلقائياً إلا إن فتحه الزائر من زر التشغيل.
 function Slide({ item, title, autoPlay, labels }) {
   const [state, setState] = useState('loading'); // loading | ready | error
@@ -45,9 +45,9 @@ function Slide({ item, title, autoPlay, labels }) {
         <img
           key={item.src}
           className="lightbox-media"
-          src={mediaUrl(item.src, '-1600.webp')}
-          srcSet={imageSrcSet(item.src)}
-          sizes="(min-width: 1024px) 80vw, 100vw"
+          src={item.src}
+          srcSet={item.srcSet}
+          sizes={item.srcSet ? '(min-width: 1024px) 80vw, 100vw' : undefined}
           width={item.w}
           height={item.h}
           alt={alt}
@@ -84,6 +84,13 @@ export default function MediaLightbox({ activity, index, autoPlay, onIndex, onCl
     root.style.overflow = 'hidden';
     return () => { root.style.overflow = previous; };
   }, [open]);
+
+  // المصغّرة الحالية تبقى ظاهرة في صفها حين يطول (على الهاتف خصوصاً)
+  const thumbs = useRef(null);
+  useEffect(() => {
+    if (!open) return;
+    thumbs.current?.querySelector('[aria-current="true"]')?.scrollIntoView({ block: 'nearest', inline: 'center' });
+  }, [open, index]);
 
   const go = (step) => onIndex((index + step + items.length) % items.length);
 
@@ -151,7 +158,7 @@ export default function MediaLightbox({ activity, index, autoPlay, onIndex, onCl
           <footer className="lightbox-foot">
             <p className="lightbox-caption" dir="auto">{item.alt[lang]}</p>
             {items.length > 1 && (
-              <ul className="lightbox-thumbs">
+              <ul ref={thumbs} className="lightbox-thumbs">
                 {items.map((thumb, i) => (
                   <li key={thumb.src}>
                     <button
@@ -161,7 +168,7 @@ export default function MediaLightbox({ activity, index, autoPlay, onIndex, onCl
                       aria-label={`${thumb.type === 'video' ? `${labels.video}: ` : ''}${thumb.alt[lang]}`}
                       onClick={() => onIndex(i)}
                     >
-                      <img src={thumb.type === 'video' ? mediaUrl(thumb.src, '-poster.webp') : mediaUrl(thumb.src, '-800.webp')} alt="" loading="lazy" decoding="async" />
+                      <img src={thumb.type === 'video' ? mediaUrl(thumb.src, '-poster.webp') : thumb.thumb || thumb.src} alt="" loading="lazy" decoding="async" />
                       {thumb.type === 'video' && <span className="lightbox-thumb-play" aria-hidden="true"><FiPlay /></span>}
                     </button>
                   </li>

@@ -1,17 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useReducedMotion } from 'framer-motion';
 
-// فحص سريع لدعم WebGL قبل تحميل مكتبة three (حتى لا نحمّلها بلا فائدة)
-function hasWebGL() {
-  try {
-    const canvas = document.createElement('canvas');
-    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
-    gl?.getExtension('WEBGL_lose_context')?.loseContext();
-    return Boolean(gl);
-  } catch {
-    return false;
-  }
-}
+// فحص دعم WebGL2 دون إنشاء سياق: إنشاء سياق تجريبي ثم فقده كان يكلّف ~1 ثانية من الخيط الرئيسي على هاتف متوسط
+// (قياس: Lighthouse بمعالج مُبطّأ 4×)، ثم يُنشئ المشهد سياقه هو. إن فشل إنشاء السياق الفعلي يرمي three خطأً فيظهر البديل.
+const hasWebGL = () => typeof window.WebGL2RenderingContext !== 'undefined';
 
 const SHINE_BASE = [243, 115, 33]; // برتقالي الشعار
 const SHINE_PEAK = [255, 230, 209]; // لون الضوء على النص
@@ -21,20 +13,24 @@ const SHINE_PEAK = [255, 230, 209]; // لون الضوء على النص
 // فيعبر الشريط النص كله (كل الأسطر) معها، بنفس اتجاه الحزمة وشدّتها، ما دامت الحزمة بمحاذاة النص عمودياً
 const FRONT_FADE = 0.3; // نسبة شدّة الحزمة عند "مقدّمتها" المرئية
 
-function paintShine(el, container, samples) {
-  const box = container.getBoundingClientRect();
-  const rect = el.getBoundingClientRect();
-  if (!rect.width) return;
+// العنوان يذوب بين 0 و0.45 من الطريق إلى الفصل الأول (HeroSection)؛ بعدها لا ضوء يُرسم عليه
+const TEXT_GONE = 0.5;
+
+function paintShine(el, container, samples, journey) {
   if (!('synced' in el.dataset)) el.dataset.synced = '';
 
   const strength = samples[0].fade;
   const off = () => {
     if (el.style.getPropertyValue('--shine-pos') !== '-9999px') el.style.setProperty('--shine-pos', '-9999px');
   };
-  if (strength < 0.01) {
+  // يُحسم ما أمكن قبل قراءة المواضع: القراءة تُستدعى في كل إطار من حلقة المشهد
+  if (strength < 0.01 || journey > TEXT_GONE) {
     off();
     return;
   }
+  const box = container.getBoundingClientRect();
+  const rect = el.getBoundingClientRect();
+  if (!rect.width) return;
 
   // موضع مقدّمة الحزمة على الشاشة (بين عيّنتين)
   let front = null;
@@ -129,7 +125,7 @@ function HeroScene({ shineRef, ready, mirrored, getComposition, layoutKey, scrol
           onContextLost: fail,
           onBeam: (samples) => {
             painted = shineRef.current;
-            if (painted && containerRef.current) paintShine(painted, containerRef.current, samples);
+            if (painted && containerRef.current) paintShine(painted, containerRef.current, samples, scrollProgress.get());
           },
         });
         sceneRef.current = scene;

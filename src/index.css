@@ -5,14 +5,14 @@
    عند توفر ملف Bold يُضاف له @font-face بوزن 700–900 ويُقصر Medium على 500–600. */
 @font-face {
   font-family: 'DIN Next LT Arabic';
-  src: url('/Fonts/DINNextLTArabic-Regular-4.ttf') format('truetype');
+  src: url('/Fonts/DINNextLTArabic-Regular-4.woff2') format('woff2'), url('/Fonts/DINNextLTArabic-Regular-4.ttf') format('truetype');
   font-weight: 100 400;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: 'DIN Next LT Arabic';
-  src: url('/Fonts/DINNextLTArabic-Medium-4.ttf') format('truetype');
+  src: url('/Fonts/DINNextLTArabic-Medium-4.woff2') format('woff2'), url('/Fonts/DINNextLTArabic-Medium-4.ttf') format('truetype');
   font-weight: 500 900;
   font-style: normal;
   font-display: swap;
@@ -385,7 +385,7 @@ body {
 @media (max-width: 1023px) {
   .manara-chapter-pin { padding: 40svh 7% 1.5rem; }
   .manara-chapter-pin.is-tight { padding-top: 6.25rem; }
-  .manara-chapter-copy { width: 100%; max-width: 650px; margin-inline: auto; padding: 1.5rem; background: linear-gradient(180deg, color-mix(in srgb, var(--story-background) 92%, transparent), var(--story-background)); border-radius: 1rem; }
+  .manara-chapter-copy { width: 100%; max-width: 650px; margin-inline: auto; padding: 1.5rem; background: linear-gradient(180deg, color-mix(in srgb, var(--chapter-bg) 92%, transparent), var(--chapter-bg)); border-radius: 1rem; }
   .manara-chapter h2 { font-size: clamp(1.8rem, 6vw, 2.7rem); }
   .manara-beat-text { font-size: 1rem; }
     .manara-fallback-detail, [dir="ltr"] .manara-fallback-detail { width: min(44vw, 230px); left: 50%; right: auto; margin-left: max(-22vw, -115px); top: 12%; }
@@ -395,11 +395,38 @@ body {
     .manara-journey *, .manara-journey *::before, .manara-journey *::after { animation: none !important; transition: none !important; }
 }
 /* يطابق مزج ألوان السماء في Three.js ضمن فضاء الألوان الخطي. */
+/* لون خلفية الحكاية يتغيّر مع كل إطار تمرير. كان متغيراً موروثاً على .manara-journey، فتغييره يعيد حساب أنماط كل ما
+   داخل الحكاية (ومنها كلمات الفصول المتحركة) في كل إطار: قياس: ثلثا وقت إعادة حساب الأنماط أثناء تمرير الحكاية على
+   هاتف (معالج مُبطّأ 4×). صار HeroSection يكتبه على مستخدميه فقط: بطاقات الفصول بمتغيّر غير موروث (لا يمسّ كلماتها)،
+   والبديل ثنائي الأبعاد خلفيةً مباشرة. */
+@property --chapter-bg { syntax: '<color>'; inherits: false; initial-value: #05030e; }
 .manara-journey { --color-story-lit: color-mix(in srgb-linear, var(--color-brand-purple-dark), var(--color-brand-purple) 45%); }
 
 /* من الغموض إلى الوضوح على مرحلتين: (1) تجمّع: الكلمات المبعثرة (إزاحة/ميلان/عمق) تقترب من مواضعها تاركةً أثراً،
    (2) تركيز: يزول الضباب وتلتقطها إضاءة دافئة عابرة. --p تقدّم البطاقة (من JS) و--t ترتيب الكلمة في البطاقة،
    فتتضح الكلمات تباعاً بترتيب القراءة. كل القياسات em وتحويلات فقط فلا يتغير التفاف الأسطر ولا ارتفاع البطاقة. */
+/* المتغيرات مسجّلة بأنواعها (@property): غير المسجّلة تُخزَّن نصاً، فكان المتصفح يلصق السلسلة كلها
+   (--x ← --ep ← --gather ← --w ← --p) داخل transform/filter وأربع طبقات text-shadow لكل كلمة ويعيد تحليلها في كل إطار
+   تمرير؛ قياس: ~24ms لإعادة حساب أنماط ~90 كلمة في كل إطار (معالج مُبطّأ 4×)، أي نحو نصف وقت التمرير في الحكاية.
+   المسجّلة تُحسب مرة لكل كلمة قيمةً واحدة. النتيجة المرئية نفسها؛ والمتصفحات دون @property تعمل كما كانت. */
+@property --p { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --amp { syntax: '<number>'; inherits: true; initial-value: 1; }
+@property --k { syntax: '<number>'; inherits: true; initial-value: 1; }
+@property --t { syntax: '<number>'; inherits: false; initial-value: 0; }
+@property --dx { syntax: '<number>'; inherits: false; initial-value: 0; }
+@property --dy { syntax: '<number>'; inherits: false; initial-value: 0; }
+@property --r { syntax: '<number>'; inherits: false; initial-value: 0; }
+@property --b { syntax: '<number>'; inherits: false; initial-value: 0; }
+@property --s { syntax: '<number>'; inherits: false; initial-value: 0; }
+@property --w { syntax: '<number>'; inherits: false; initial-value: 0; }
+@property --gather { syntax: '<number>'; inherits: false; initial-value: 0; }
+@property --ep { syntax: '<number>'; inherits: false; initial-value: 0; }
+@property --ef { syntax: '<number>'; inherits: false; initial-value: 0; }
+@property --cl-glow { syntax: '<number>'; inherits: false; initial-value: 0; }
+@property --m { syntax: '<number>'; inherits: false; initial-value: 0; }
+@property --hl { syntax: '<number>'; inherits: false; initial-value: 0; }
+@property --x { syntax: '<length>'; inherits: false; initial-value: 0px; }
+@property --y { syntax: '<length>'; inherits: false; initial-value: 0px; }
 .clarity { --p: 0; --amp: 1; --k: 1; }
 .manara-chapter h2 { --k: 1.5; }
 .manara-beat-text, .manara-beat li, .manara-beat dl, .story-map-head { --k: 0.7; }
@@ -414,7 +441,7 @@ body {
   --focus: clamp(0, calc((var(--w) - 0.25) * 1.34), 1);
   --ep: calc((1 - var(--gather)) * (1 - var(--gather)));
   --ef: calc((1 - var(--focus)) * (1 - var(--focus)));
-  --glow: calc(4 * var(--w) * (1 - var(--w)));
+  --cl-glow: calc(4 * var(--w) * (1 - var(--w)));
   --m: calc(var(--amp) * var(--k));
   --x: calc(var(--ep) * var(--dx) * var(--m) * 1em);
   --y: calc(var(--ep) * var(--dy) * var(--m) * 1em);
@@ -426,7 +453,7 @@ body {
     calc(var(--x) * 0.5) calc(var(--y) * 0.5) 0 color-mix(in srgb, currentColor calc(var(--ep) * 38%), transparent),
     var(--x) var(--y) 0 color-mix(in srgb, currentColor calc(var(--ep) * 20%), transparent),
     calc(var(--x) * -0.55) calc(var(--y) * -0.55) 0 color-mix(in srgb, var(--color-brand-orange-light) calc(var(--ep) * 48%), transparent),
-    0 0 calc(var(--glow) * 0.6em) color-mix(in srgb, var(--color-brand-orange-light) calc(var(--glow) * 34%), transparent);
+    0 0 calc(var(--cl-glow) * 0.6em) color-mix(in srgb, var(--color-brand-orange-light) calc(var(--cl-glow) * 34%), transparent);
 }
 .clarity.is-clear .clarity-word { opacity: 1; transform: none; filter: none; text-shadow: inherit; }
 @media (max-width: 1023px) { .clarity { --amp: 0.6; } }
@@ -894,6 +921,14 @@ a.contact-channel-value:hover { color: var(--color-brand-orange-light); }
 .reel-static-strip { display: flex; gap: 1rem; overflow-x: auto; padding: 0 var(--M, 1rem) 2.5rem; scroll-snap-type: x mandatory; list-style: none; margin: 0; --M: clamp(16px, 5vw, 80px); }
 .reel-frame.is-static { position: relative; flex: none; height: clamp(15rem, 42vh, 26rem); aspect-ratio: var(--ar); scroll-snap-align: start; visibility: visible; opacity: 1; will-change: auto; }
 
+/* قبل وصول اختيار اللقطات من الـ API، أو إن لم توجد لقطات منشورة، أو تعذّر التحميل */
+.reel-status { min-height: 60vh; padding-bottom: 5rem; }
+.reel-status-text { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; margin-top: 1.25rem; color: rgb(255 255 255 / .7); font-size: .95rem; }
+.reel-status-spinner { width: 1.1rem; height: 1.1rem; border-radius: 50%; border: 2px solid rgb(255 255 255 / .2); border-top-color: var(--color-brand-orange-light); animation: contact-spin .8s linear infinite; }
+.reel-status-retry { font-weight: 700; color: var(--color-brand-orange-light); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.reel-status-retry:focus-visible { outline: 2px solid var(--color-brand-orange-light); outline-offset: 3px; border-radius: .25rem; }
+@media (prefers-reduced-motion: reduce) { .reel-status-spinner { animation-duration: 2.4s; } }
+
 /* المرحلة الثانية: بقية اللقطات (تكوين تحريري غير متماثل يكمل ترقيم الشريط) ثم الأفلام؛ تنتهي ببنفسجي «أصوات من الميدان» */
 .reel-more { padding: clamp(3rem, 7vw, 6rem) 0 clamp(4rem, 8vw, 7rem); background: linear-gradient(180deg, var(--color-brand-night) 0%, var(--color-brand-night) 55%, var(--color-brand-purple) 100%); }
 .reel-more-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 3.5rem 1.5rem; align-items: start; list-style: none; margin: 0; padding: 0; }
@@ -908,6 +943,10 @@ a.contact-channel-value:hover { color: var(--color-brand-orange-light); }
 .reel-more-item:nth-child(5n) { grid-column: 9 / span 4; margin-top: 7rem; }
 .reel-more-item img { transition: transform .9s cubic-bezier(.22, 1, .36, 1); }
 .reel-more-item .reel-frame-media:hover img { transform: scale(1.03); }
+.reel-more-actions { display: flex; justify-content: center; margin-top: 3rem; }
+.reel-more-button { display: inline-flex; align-items: center; gap: .6rem; padding: .8rem 1.4rem; border-radius: 2rem; border: 1px solid rgb(255 255 255 / .25); color: #fff; font-weight: 700; font-size: .9rem; cursor: pointer; transition: border-color .2s ease, color .2s ease; }
+.reel-more-button:hover { border-color: var(--color-brand-orange-light); color: var(--color-brand-orange-light); }
+.reel-more-button:focus-visible { outline: 2px solid var(--color-brand-orange-light); outline-offset: 3px; }
 .reel-films { margin-top: clamp(3rem, 6vw, 5rem); padding-top: 1.5rem; border-top: 1px solid rgb(255 255 255 / .12); }
 .reel-films-label { font-size: .85rem; font-weight: 700; color: var(--color-brand-orange-light); margin-bottom: 1.25rem; }
 .reel-films ul { display: grid; grid-template-columns: repeat(5, minmax(0, 15rem)); gap: 1.25rem; list-style: none; margin: 0; padding: 0; }
@@ -938,7 +977,7 @@ a.contact-channel-value:hover { color: var(--color-brand-orange-light); }
 /* العارض: <dialog> بملء الشاشة فوق كل شيء */
 .lightbox { width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; color: #fff; background: rgb(8 5 22 / .96); overscroll-behavior: contain; }
 .lightbox::backdrop { background: rgb(8 5 22 / .7); }
-.lightbox-layout { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; height: 100%; }
+.lightbox-layout { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; grid-template-columns: minmax(0, 1fr); height: 100%; } /* العمود بعرض الشاشة: صف المصغّرات الطويل يتمرّر وحده بدل أن يوسّع العارض */
 .lightbox-bar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .9rem clamp(1rem, 3vw, 2rem); }
 .lightbox-title { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lightbox-count { font-size: .8rem; color: var(--color-brand-gray); }
@@ -959,7 +998,10 @@ video.lightbox-media { opacity: 1; }
 .lightbox-nav--next { inset-inline-end: clamp(.5rem, 1.5vw, 1.5rem); }
 .lightbox-foot { padding: .75rem clamp(1rem, 3vw, 2rem) 1rem; }
 .lightbox-caption { text-align: center; font-size: .9rem; color: var(--color-brand-tint); min-height: 1.5em; }
-.lightbox-thumbs { display: flex; justify-content: center; gap: .5rem; margin-top: .75rem; overflow-x: auto; scrollbar-width: none; }
+.lightbox-thumbs { display: flex; gap: .5rem; margin-top: .75rem; padding: 4px; overflow-x: auto; scrollbar-width: none; }
+/* توسيط آمن: الهامشان التلقائيان يوسّطان الصف حين يتسع، ولا يقصّان أوله حين يزيد عن العرض (بخلاف justify-content: center) */
+.lightbox-thumbs > li:first-child { margin-inline-start: auto; }
+.lightbox-thumbs > li:last-child { margin-inline-end: auto; }
 .lightbox-thumb { position: relative; display: block; width: 3.5rem; height: 3.5rem; border-radius: .6rem; overflow: hidden; opacity: .5; transition: opacity .2s ease; box-shadow: inset 0 0 0 2px transparent; }
 .lightbox-thumb img { width: 100%; height: 100%; object-fit: cover; }
 .lightbox-thumb:hover { opacity: .85; }

@@ -280,7 +280,11 @@ export function createAperture(canvas, { photoUrl }) {
     dispose() {
       disposed = true;
       img.onload = null;
-      gl.getExtension('WEBGL_lose_context')?.loseContext();
+      // StrictMode (أثناء التطوير) يزيل النافذة ثم يعيد إنشاءها فوراً على اللوحة نفسها، وفقد السياق عندها كان يسلّم
+      // النسخة الثانية سياقاً ميتاً فتظهر النسخة البديلة بلا حروف؛ نحرّر السياق فقط بعد أن تغادر اللوحة الصفحة
+      setTimeout(() => {
+        if (!canvas.isConnected) gl.getExtension('WEBGL_lose_context')?.loseContext();
+      }, 0);
     },
   };
 }

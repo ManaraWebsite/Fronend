@@ -52,3 +52,16 @@ export const appendPostImages = (formData, images, originalImages = []) => {
     .filter((image) => !keptIds.has(image.id))
     .forEach((image) => formData.append('remove_images[]', String(image.id)));
 };
+
+// صور «لحظات حقيقية»: JPG/PNG/WebP فقط، بنفس حد الحجم (photoRules في الـ backend)
+export const MOMENT_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+export const MOMENT_IMAGE_ACCEPT = MOMENT_IMAGE_TYPES.join(',');
+
+export const momentFileError = (file) => {
+  if (!MOMENT_IMAGE_TYPES.includes(file.type)) return `"${file.name}" is not a JPG, PNG or WebP image.`;
+  if (file.size > MAX_IMAGE_BYTES) return `"${file.name}" is larger than 2 MB.`;
+  return null;
+};
+
+// أصغر نسخة من صورة «لحظات حقيقية» للمصغّرات: الصور الأصلية لها srcset بعرضين، والمرفوعة نسخة واحدة
+export const momentThumbUrl = (image) => resolveMediaUrl(image?.srcset ? image.srcset.split(' ')[0] : image?.url);

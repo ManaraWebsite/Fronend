@@ -7,12 +7,35 @@
     <title>منارة</title>
     <!-- لون السماء قبل تحميل الـ JS حتى لا يظهر وميض أبيض -->
     <style>html, body { background: #0c0820; }</style>
+    <!-- تخطيط شاشة الافتتاح (المرسومة في body) هنا في الصفحة نفسها: في التطوير يُحمّل Vite ملف CSS عبر JS بعد أول رسم،
+         فكانت الشاشة تظهر لحظةً بلا أنماط (الشعارات بحجمها الكامل). الحركات وبقية الطبقات تبقى في index.css. -->
+    <style>
+      .splash { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; overflow: hidden;
+        background: radial-gradient(ellipse 70% 60% at 50% 42%, #312364 0%, #1d1540 45%, #0c0820 100%); }
+      .splash-stage { position: relative; width: min(64vw, 380px); aspect-ratio: 1; }
+      .splash-stage > * { position: absolute; inset: 0; width: 100%; height: 100%; }
+      .splash-ghost { opacity: 0; }
+    </style>
 
-    <!-- الخط محلي ويُحمَّل مبكراً حتى لا يتبدّل شكل النص بعد الظهور -->
-    <link rel="preload" href="/Fonts/DINNextLTArabic-Regular-4.ttf" as="font" type="font/ttf" crossorigin>
-    <link rel="preload" href="/Fonts/DINNextLTArabic-Medium-4.ttf" as="font" type="font/ttf" crossorigin>
+    <!-- الخط محلي ويُحمَّل مبكراً حتى لا يتبدّل شكل النص بعد الظهور (WOFF2: ‏100KB بدل 320KB لملفات TTF، وTTF احتياط في index.css) -->
+    <link rel="preload" href="/Fonts/DINNextLTArabic-Regular-4.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/Fonts/DINNextLTArabic-Medium-4.woff2" as="font" type="font/woff2" crossorigin>
   </head>
   <body>
+    <!-- شاشة الافتتاح ثابتة في HTML فتُرسم مع أول إطار (أنماطها في CSS المحمّل في head)، لا بعد تنفيذ حزمة JS كاملة:
+         كانت أكبر عنصر في الشاشة (LCP) وتنتظر React. Splash.jsx يتسلّمها كما هي، وتُزال فوراً خارج الصفحة الرئيسية. -->
+    <div id="splash" class="splash" aria-hidden="true">
+      <div class="splash-stage">
+        <div class="splash-halo"></div>
+        <img class="splash-ghost splash-ghost--a" src="/logo-mark.svg" alt="" />
+        <img class="splash-ghost splash-ghost--b" src="/logo-mark.svg" alt="" />
+        <img class="splash-logo" src="/logo-mark.svg" alt="" fetchpriority="high" />
+        <div class="splash-sweep"><span></span></div>
+        <div class="splash-bloom"></div>
+      </div>
+    </div>
+    <!-- خارج الصفحة الرئيسية تُزال قبل أول رسم (لا وميض) -->
+    <script>if (location.pathname !== '/') document.getElementById('splash').remove();</script>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

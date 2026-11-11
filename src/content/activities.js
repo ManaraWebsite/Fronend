@@ -1,12 +1,18 @@
+import { resolveMediaUrl } from '../lib/media';
+
 // «لحظات حقيقية»: تجربة من مرحلتين بصور ومقاطع حقيقية من ورش منارة ومبادراتها (الإعلانات الرسمية في قسم المنشورات).
 //   المرحلة الأولى (Activities.jsx — مثبّتة ويتحكم بها التمرير): العنوان الكبير نافذة على صورة الافتتاح، تنتفخ حروفه
 //   حتى تصير إطاراً يملأ الشاشة، ثم تصغر الصورة إلى أول لقطة في شريط تُوزَّع بقية لقطاته من رزمة ويتحرك أفقياً.
 //   المرحلة الثانية: بقية اللقطات والأفلام الكاملة، بترقيم يكمل ترقيم الشريط.
-// الصور والمقاطع من مجلدات المصدر الحالية فقط (المقاطع: «التدريب الميداني»، «ورشة GITHUB»، «ورشة ai»…). الملفات في public/media/activities/<مجلد>/ نسخ ويب من الأصل: صور WebP بعرضين (800 و1600)، مقطع قصير صامت (loop.mp4)،
-// وفيلم كامل (reel.mp4 مع reel-poster.webp). الأوصاف تصف ما يظهر في الصورة فقط؛ الأسماء من مجلدات المصدر.
+// الصور ومجموعاتها (العناوين) تُدار من لوحة التحكم: GET /moments يعيد الشريط كما يختاره الأدمن (صورة الافتتاح، ثم صورة
+// أو مقطع من كل مجموعة بترتيب المجموعات)، وبقية الصور للتكوين التحريري (المجموعات بترتيبها، وصور كل مجموعة بترتيب
+// عشوائي في كل زيارة)، مع المجموعات المنشورة بترتيبها (buildMoments أدناه). المقاطع ثابتة في public/media/activities/<مفتاح المجموعة>/:
+// مقطع قصير صامت (loop.mp4) وفيلم كامل (reel.mp4 مع reel-poster.webp)، وكذلك الصور الأصلية للقسم (WebP بعرضين 800 و1600)
+// التي نُقلت سجلاتها إلى قاعدة البيانات.
 
 export const ACTIVITY_MEDIA_BASE = '/media/activities';
 
+// أسماء المجموعات الأصلية: احتياط للمقاطع إن لم تصل أسماؤها من الـ API
 export const ACTIVITY_NAMES = {
   first: { AR: 'ورشة عمل حول الأمن السيبراني', EN: 'Cybersecurity Workshop' },
   field: { AR: 'التدريب الميداني', EN: 'Field Training' },
@@ -18,80 +24,19 @@ export const ACTIVITY_NAMES = {
   team: { AR: 'اجتماع الفريق', EN: 'Team Meeting' },
 };
 
-// ترتيب شريط الأنشطة أعلى المرحلة الأولى (يُضاء النشاط الذي تنتمي إليه اللقطة الحالية)
-export const RIBBON = ['first', 'field', 'games', 'github', 'amanha', 'ai', 'team'];
-
 // العنوان الذي يصير نافذة الافتتاح: سطر واحد على الشاشات العريضة، وسطران على الهاتف
 export const APERTURE_WORDS = {
   AR: { wide: ['لحظات حقيقية'], narrow: ['لحظات', 'حقيقية'] },
   EN: { wide: ['REAL MOMENTS'], narrow: ['REAL', 'MOMENTS'] },
 };
 
-const img = (src, ar, pos, activity, alt) => ({ type: 'image', src, ar, pos, activity, alt });
-
-// لقطات الشريط بالترتيب؛ الأولى صورة الافتتاح (IMG_4817). ar = العرض/الارتفاع، pos = موضع القص؛ يُكتب تحت كل لقطة اسم ورشتها.
-export const strip = [
-  img('first/1', 16 / 9, '50% 60%', 'first',
-    { AR: 'الحضور في القاعة يتابعون المتحدثين في المقدمة', EN: 'The audience in the hall following the speakers at the front' }),
-  img('field/1', 4 / 3, '50% 55%', 'field',
-    { AR: 'المدرّب يتحدث مع مشاركتين', EN: 'The trainer talking with two participants' }),
-  {
-    type: 'loop', src: 'field', reel: 'field/reel', ar: 9 / 16, activity: 'field',
-    alt: { AR: 'لقطة حيّة من التدريب الميداني', EN: 'A live moment from the field training' },
-  },
-  img('games/4', 3 / 4, '50% 60%', 'games',
-    { AR: 'المشاركون يستمعون إلى الشرح أمام الشاشة', EN: 'Participants listening to the presentation in front of the screen' }),
-  {
-    type: 'loop', src: 'github', reel: 'github/reel', ar: 9 / 16, activity: 'github',
-    alt: { AR: 'لقطة حيّة من ورشة GitHub', EN: 'A live moment from the GitHub workshop' },
-  },
-  img('amanha/1', 4 / 3, '50% 60%', 'amanha',
-    { AR: 'مقدّما الجلسة أمام النساء الجالسات في الخيمة', EN: 'The facilitators before the women seated in the tent' }),
-  img('ai/4', 3 / 4, '50% 60%', 'ai',
-    { AR: 'حلقة النقاش، ومشاركة تكتب على حاسوبها', EN: 'The discussion circle, with a participant typing on her laptop' }),
-  {
-    type: 'loop', src: 'ai', reel: 'ai/reel', ar: 9 / 16, activity: 'ai',
-    alt: { AR: 'لقطة حيّة من ورشة الذكاء الاصطناعي', EN: 'A live moment from the AI workshop' },
-  },
-  img('first/2', 4 / 3, '50% 60%', 'first',
-    { AR: 'مشاركون ومشاركات جالسون في القاعة', EN: 'Participants seated in the hall' }),
-  img('games/6', 9 / 16, '50% 55%', 'games',
-    { AR: 'المدرّب يتحدث واقفاً إلى المشاركين حول الطاولة', EN: 'The trainer standing and speaking to participants around the table' }),
-  img('github/1', 4 / 3, '50% 60%', 'github',
-    { AR: 'المشاركون والمشاركات حول طاولة ورشة GitHub', EN: 'Participants gathered around the GitHub workshop table' }),
-  {
-    type: 'loop', src: 'team', reel: 'team/reel', ar: 9 / 16, activity: 'team',
-    alt: { AR: 'لقطة حيّة من اجتماع فريق منارة حول طاولة الاجتماعات', EN: 'A live moment from the Manara team meeting around the conference table' },
-  },
-];
-
-// المرحلة الثانية: بقية الصور الموجودة في مجلدات المصدر (لا تتكرر صور الشريط)، ثم الأفلام الكاملة
-export const morePhotos = [
-  img('first/3', 4 / 3, '50% 60%', 'first',
-    { AR: 'القاعة من الخلف والحضور يواجهون المتحدثين', EN: 'The hall from the back, with the audience facing the speakers' }),
-  img('github/4', 3 / 4, '50% 60%', 'github',
-    { AR: 'المشاركون حول الطاولة والشاشة في آخر القاعة', EN: 'Participants around the table, with the screen at the end of the room' }),
-  img('field/2', 4 / 3, '50% 55%', 'field',
-    { AR: 'مدرّبة بجانب الشاشة والمشاركون على الطاولات', EN: 'A trainer by the screen, with participants at the tables' }),
-  img('games/5', 9 / 16, '50% 55%', 'games',
-    { AR: 'المدرّب يتحدث إلى المشاركين حول الطاولة', EN: 'The trainer speaking to participants around the table' }),
-  img('amanha/3', 4 / 3, '50% 62%', 'amanha',
-    { AR: 'الخيمة من الداخل والحاضرون جالسون على الأرض', EN: 'Inside the tent, with attendees seated on the floor' }),
-  img('field/3', 4 / 3, '50% 60%', 'field',
-    { AR: 'مشاركون ومشاركات جالسون على الطاولات', EN: 'Participants seated at the tables' }),
-  img('ai/5', 3 / 4, '50% 60%', 'ai',
-    { AR: 'المشاركون جالسون في دائرة داخل القاعة', EN: 'Participants seated in a circle in the room' }),
-  img('github/5', 4 / 3, '50% 60%', 'github',
-    { AR: 'المشاركون والمشاركات جالسون حول الطاولة', EN: 'Participants seated around the table' }),
-  img('field/5', 4 / 3, '50% 55%', 'field',
-    { AR: 'مشاركون يتحدثون واقفين بين الطاولات', EN: 'Participants talking while standing between the tables' }),
-  img('ai/3', 4 / 3, '50% 60%', 'ai',
-    { AR: 'المشاركون جالسون في دائرة واحدة', EN: 'Participants seated in a single circle' }),
-  img('field/4', 4 / 3, '50% 60%', 'field',
-    { AR: 'مشاركات ومشاركون في الصفوف الأمامية', EN: 'Participants in the front rows' }),
-  img('intro2/1', 4 / 3, '50% 60%', 'intro2',
-    { AR: 'المشاركون في اللقاء التعريفي حول الطاولة', EN: 'Participants of the intro meeting around the table' }),
-];
+// أوصاف المقاطع الحية القصيرة (loop.mp4) حسب مجلدها؛ الأدمن يختار لكل مجموعة لها مقطع أن يظهر في الشريط بدل صورة
+const LOOP_ALTS = {
+  field: { AR: 'لقطة حيّة من التدريب الميداني', EN: 'A live moment from the field training' },
+  github: { AR: 'لقطة حيّة من ورشة GitHub', EN: 'A live moment from the GitHub workshop' },
+  ai: { AR: 'لقطة حيّة من ورشة الذكاء الاصطناعي', EN: 'A live moment from the AI workshop' },
+  team: { AR: 'لقطة حيّة من اجتماع فريق منارة حول طاولة الاجتماعات', EN: 'A live moment from the Manara team meeting around the conference table' },
+};
 
 export const films = [
   { src: 'field/reel', duration: '0:18', activity: 'field', alt: { AR: 'فيلم من التدريب الميداني', EN: 'Film from the field training' } },
@@ -102,4 +47,72 @@ export const films = [
 ];
 
 export const mediaUrl = (src, suffix) => `${ACTIVITY_MEDIA_BASE}/${src}${suffix}`;
-export const imageSrcSet = (src) => `${mediaUrl(src, '-800.webp')} 800w, ${mediaUrl(src, '-1600.webp')} 1600w`;
+
+const localized = (pair, fallback = '') => ({ AR: pair?.ar || pair?.en || fallback, EN: pair?.en || pair?.ar || fallback });
+
+// صورة من الـ API بالشكل الذي يرسمه القسم: src رابط الصورة (ومعرّفها الفريد)، srcSet للصور الأصلية بعرضين،
+// thumb للمصغّرات، ar نسبة العرض/الارتفاع، pos موضع القص، activity مفتاح مجموعتها
+const toPhoto = (image, names) => {
+  const url = resolveMediaUrl(image.url);
+  const name = names[image.group] || { AR: '', EN: '' };
+  const fallbackAlt = { AR: `صورة من ${name.AR}`, EN: `A photo from ${name.EN}` };
+  return {
+    type: 'image',
+    id: image.id,
+    src: url,
+    srcSet: image.srcset || undefined,
+    thumb: image.srcset ? image.srcset.split(' ')[0] : url,
+    ar: image.width && image.height ? image.width / image.height : 4 / 3,
+    pos: image.focal_point || '50% 50%',
+    activity: image.group,
+    lead: Boolean(image.is_lead),
+    alt: { AR: image.alt?.ar || fallbackAlt.AR, EN: image.alt?.en || image.alt?.ar || fallbackAlt.EN },
+  };
+};
+
+const toLoop = (item, names) => {
+  const name = names[item.group] || { AR: '', EN: '' };
+  return {
+    type: 'loop',
+    src: item.video,
+    reel: `${item.video}/reel`,
+    ar: 9 / 16,
+    activity: item.group,
+    alt: LOOP_ALTS[item.video] || { AR: `لقطة حيّة من ${name.AR}`, EN: `A live moment from ${name.EN}` },
+  };
+};
+
+// من استجابة GET /moments إلى محتوى القسم: الشريط (صور ومقاطع)، بقية الصور، الأفلام، شريط الأنشطة، والأسماء
+export function buildMoments(stripItems = [], groups = [], rest = []) {
+  const names = { ...ACTIVITY_NAMES };
+  groups.forEach((group) => { names[group.key] = localized(group.title, group.key); });
+  const published = new Set(groups.map((group) => group.key));
+  const usable = (image) => image?.url && published.has(image.group);
+
+  const strip = stripItems
+    .map((item) => {
+      if (item?.type === 'video' && item.video && published.has(item.group)) return toLoop(item, names);
+      if (item?.type === 'image' && usable(item.image)) return toPhoto(item.image, names);
+      return null;
+    })
+    .filter(Boolean);
+  const more = rest.filter(usable).map((image) => toPhoto(image, names));
+
+  // الشريط يبدأ بصورة تملأ حروف العنوان: صورة الافتتاح (تصل أولاً)، وإلا أول صورة في الشريط، أو أول صورة بعده
+  const firstPhoto = strip.findIndex((item) => item.type === 'image');
+  if (firstPhoto > 0) strip.unshift(...strip.splice(firstPhoto, 1));
+  else if (firstPhoto === -1 && more.length) strip.unshift(more.shift());
+  if (strip[0]?.type !== 'image') strip.length = 0;
+
+  // شريط الأنشطة: مجموعات لقطات الشريط فقط، بترتيب ظهورها في الشريط (الذي يرتّبه الأدمن)
+  const ribbon = [...new Set(strip.map((item) => item.activity))];
+
+  return {
+    strip,
+    more,
+    photos: [...strip.filter((item) => item.type === 'image'), ...more],
+    films: films.filter((film) => published.has(film.activity)),
+    ribbon,
+    names,
+  };
+}

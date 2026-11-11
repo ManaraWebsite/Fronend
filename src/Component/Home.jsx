@@ -29,7 +29,8 @@ const Home = () => {
 
     splashPlayed = true;
     let minTimer;
-    const startedAt = performance.now();
+    // في أول تحميل تبدأ حركة الشاشة مع أول إطار (index.html)، فالحد الأدنى يُحسب من بداية التحميل
+    const startedAt = document.getElementById('splash') ? 0 : performance.now();
     const hide = () => {
       minTimer = setTimeout(() => setIsLoading(false), Math.max(0, SPLASH_MIN_MS - (performance.now() - startedAt)));
     };
