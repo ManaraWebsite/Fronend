@@ -12,6 +12,7 @@ import { CoverImage, GalleryBadge, Kicker } from './brand';
 import PostGallery from './PostGallery';
 import Navbar from './Navbar';
 import Footer from './Footer';
+import { SITE_TITLE } from '../lib/tagline';
 
 // شريط تقدّم القراءة: يكتب transform فقط (بلا إعادة رسم)، ويُحدَّث مرة واحدة لكل إطار
 function ReadingProgress({ target }) {
@@ -79,7 +80,7 @@ function PostDetail() {
   useEffect(() => {
     if (title) document.title = `${title} | ${isAr ? 'منارة' : 'Manara'}`;
     return () => {
-      document.title = 'منارة';
+      document.title = SITE_TITLE;
     };
   }, [title, isAr]);
 

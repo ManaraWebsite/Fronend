@@ -1015,3 +1015,97 @@ video.lightbox-media { opacity: 1; }
 @media (prefers-reduced-motion: reduce) {
   .lightbox-media, .lightbox-thumb { transition: none; }
 }
+
+/* ---------- الشعار: «نورٌ يُبدِّدُ الظلامَ» تُضاء، و«From Confusion to Clarity» تتضح ---------- */
+/* شعاع ضوء يعبر الكلمات ببطء (يمين←يسار في العربية)؛ الحشوة تحمي ذيول الحروف من قصّ background-clip */
+.tagline-light {
+  --tl-base: var(--color-brand-orange);
+  display: inline-block; padding: .2em .12em .38em; margin: -.2em -.12em -.38em;
+  color: transparent;
+  background: linear-gradient(100deg, var(--tl-base) 0%, var(--tl-base) 40%, var(--color-brand-orange-light) 46%, #ffe6d1 50%, var(--color-brand-orange-light) 54%, var(--tl-base) 60%, var(--tl-base) 100%);
+  background-size: 300% 100%; background-position: 100% 0;
+  -webkit-background-clip: text; background-clip: text;
+  /* ظلال النص الموروثة تُرسم فوق التدرّج المقصوص فتعتّمه؛ الظل هنا مرشّح خلف الحروف كما في عنوان الواجهة */
+  text-shadow: none; filter: drop-shadow(0 1px 10px rgb(12 8 32 / .55));
+  animation: tagline-light 8s ease-in-out 1.5s infinite;
+}
+[dir="rtl"] .tagline-light, .tagline-light[dir="rtl"] { background-position: 0 0; animation-name: tagline-light-rtl; }
+@keyframes tagline-light { 0%, 60% { background-position: 100% 0; } 90%, 100% { background-position: 0 0; } }
+@keyframes tagline-light-rtl { 0%, 60% { background-position: 0 0; } 90%, 100% { background-position: 100% 0; } }
+
+/* من التشتت إلى الوضوح: الحروف متباعدة وضبابية ثم تتجمّع (مرة واحدة) */
+.tagline-focus { display: inline-block; animation: tagline-focus 1.8s cubic-bezier(.22, 1, .36, 1) .3s both; }
+@keyframes tagline-focus {
+  from { opacity: .15; filter: blur(9px); letter-spacing: .3em; }
+  to { opacity: 1; filter: blur(0); letter-spacing: normal; }
+}
+
+/* التوقيع ثنائي اللغة عند «من هنا بدأت منارة»: لغة الصفحة كبيرة، والأخرى صدى أصغر، وبينهما شعاع قصير */
+.tagline-lockup { margin-top: .5rem; display: grid; gap: .55rem; justify-items: start; }
+.tagline-lockup p { margin: 0; }
+.tagline-lockup--ar p { text-align: right; justify-self: start; }
+.tagline-lockup--en p { text-align: left; justify-self: start; }
+.tagline-lockup-major { font-size: clamp(1.55rem, 2.6vw, 2.35rem); font-weight: 800; line-height: 1.45; color: #fff; }
+.tagline-lockup-minor { font-size: clamp(.95rem, 1.3vw, 1.12rem); font-weight: 500; line-height: 1.5; letter-spacing: .02em; color: var(--color-brand-gray); }
+.tagline-lockup-minor .tagline-light { --tl-base: var(--color-brand-orange-light); }
+.tagline-lockup-beam { display: block; width: 2.5rem; height: 2px; border-radius: 2px; background: linear-gradient(90deg, var(--color-brand-orange), transparent); }
+[dir="rtl"] .tagline-lockup-beam { background: linear-gradient(270deg, var(--color-brand-orange), transparent); }
+
+@media (prefers-reduced-motion: reduce) {
+  .tagline-light { animation: none; }
+  .tagline-focus { animation: none; }
+}
+
+/* ---------- التذييل ----------
+   الخلفية من الصنف bg-brand-purple-dark على العنصر نفسه. هويّة منارة ورسالتها، ثم الروابط، ثم الحقوق والمطوّرون */
+.site-footer { padding: 4.5rem 0 1.75rem; }
+
+.footer-main { display: grid; gap: 2.75rem; }
+@media (min-width: 1024px) {
+  .footer-main { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); align-items: start; gap: 4rem; }
+}
+
+.footer-signature { display: flex; align-items: center; gap: .9rem; }
+.footer-logo { height: 2.25rem; width: auto; object-fit: contain; }
+.footer-tagline { padding-inline-start: .9rem; border-inline-start: 1px solid rgb(255 255 255 / .15); font-size: .9rem; font-weight: 500; color: var(--color-brand-orange-light); white-space: nowrap; }
+.footer-belief { margin-top: 1.5rem; max-width: 30ch; font-size: clamp(1.2rem, 2vw, 1.55rem); line-height: 1.65; font-weight: 500; color: #fff; }
+.footer-belief em { font-style: normal; color: var(--color-brand-orange); }
+.footer-offer { display: flex; flex-wrap: wrap; gap: .3rem 1.1rem; margin-top: 1rem; font-size: .86rem; line-height: 1.7; color: var(--color-brand-gray); }
+/* نقطة صغيرة قبل كل خدمة، فيبقى الالتفاف مرتباً على الهاتف */
+.footer-offer-item { display: inline-flex; align-items: center; gap: .45rem; }
+.footer-offer-item::before { content: ''; width: 4px; height: 4px; border-radius: 50%; flex: none; background: var(--color-brand-orange); }
+.footer-icons { display: flex; gap: .35rem; margin-top: 1.4rem; margin-inline-start: -.5rem; }
+.footer-icon { display: grid; place-items: center; width: 2.25rem; height: 2.25rem; border-radius: .5rem; font-size: .95rem; color: var(--color-brand-gray); transition: color .2s ease; }
+.footer-icon:hover, .footer-icon:focus-visible { color: #fff; }
+
+.footer-links { display: grid; grid-template-columns: repeat(2, max-content); gap: 2rem 4rem; }
+@media (min-width: 1024px) {
+  .footer-links { justify-self: end; padding-top: .5rem; }
+}
+.footer-label { margin-bottom: 1rem; font-size: .75rem; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: rgb(178 178 178 / .7); }
+.footer-list { display: grid; gap: .7rem; }
+.footer-link { font-size: .95rem; color: var(--color-brand-tint); border-radius: .25rem; transition: color .2s ease; }
+.footer-link:hover, .footer-link:focus-visible { color: var(--color-brand-orange-light); }
+
+.footer-bottom { display: flex; flex-direction: column; gap: .75rem; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid rgb(255 255 255 / .08); font-size: .82rem; }
+@media (min-width: 900px) {
+  .footer-bottom { flex-direction: row; align-items: center; justify-content: space-between; gap: 2rem; }
+}
+.footer-rights { line-height: 1.7; color: rgb(178 178 178 / .7); }
+.footer-credits { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem 1rem; color: rgb(178 178 178 / .7); }
+.footer-dev { display: inline-flex; align-items: center; gap: .4rem; color: var(--color-brand-tint); border-radius: .25rem; transition: color .2s ease; }
+.footer-dev svg { font-size: .75rem; color: var(--color-brand-gray); transition: color .2s ease; }
+.footer-dev:hover, .footer-dev:focus-visible, .footer-dev:hover svg, .footer-dev:focus-visible svg { color: #fff; }
+
+.footer-icon:focus-visible, .footer-link:focus-visible, .footer-dev:focus-visible { outline: 2px solid var(--color-brand-orange-light); outline-offset: 3px; }
+
+@media (max-width: 767px) {
+  .site-footer { padding-top: 3rem; }
+  .footer-main { gap: 2.25rem; }
+  .footer-belief { margin-top: 1.1rem; }
+  .footer-links { gap: 1.75rem 3rem; }
+  .footer-bottom { margin-top: 2.25rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .footer-icon, .footer-link, .footer-dev, .footer-dev svg { transition: none; }
+}

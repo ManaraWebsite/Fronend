@@ -27,7 +27,7 @@ export default defineConfig({
         id: '/',
         name: 'Manara',
         short_name: 'Manara',
-        description: 'Manara Platform',
+        description: 'منارة — نورٌ يُبدِّدُ الظلامَ · Manara — From Confusion to Clarity',
 
         start_url: '/',
         display: 'standalone',

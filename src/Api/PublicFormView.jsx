@@ -8,6 +8,7 @@ import { localize } from '../lib/localize';
 import { resolveMediaUrl } from '../lib/media';
 import { BrandCover, CoverImage } from '../Component/brand';
 import { getValidationErrors } from '../lib/apiError';
+import { SITE_TITLE } from '../lib/tagline';
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024; // SubmitFormRequest: PDF حتى 5 MB
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/; // نفس فحص نموذج التواصل؛ الـ backend يتحقق نهائياً
@@ -182,7 +183,7 @@ const PublicFormView = () => {
   useEffect(() => {
     if (formTitle) document.title = `${formTitle} | ${text.site}`;
     return () => {
-      document.title = 'منارة';
+      document.title = SITE_TITLE;
     };
   }, [formTitle, text.site]);
 

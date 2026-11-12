@@ -5,6 +5,7 @@ import {
 import StoryChapter, { ClarityGroup } from './StoryChapter';
 // أزرار المشاركة تفتح نموذج التواصل الموجود وتحدد موضوع الرسالة (يستمع له Contact)
 import { announceIntent } from '../lib/contactIntent';
+import { TAGLINE } from '../lib/tagline';
 
 const ICONS = {
   power: FiZapOff, wifi: FiWifiOff, device: FiMonitor, cpu: FiCpu, book: FiBookOpen, briefcase: FiBriefcase,
@@ -20,7 +21,7 @@ function beatStrings(beat) {
     ...(beat.text || []),
     v.from, v.to, ...(v.rows || []).flatMap(r => (Array.isArray(r) ? r : [r.label, r.text])),
     ...(v.steps || []), ...(v.items || []).flatMap(it => [it.label, it.title, it.desc, it.meets]),
-    v.text, ...(beat.actions || []).map(a => a.label),
+    v.text, v.kind === 'tagline' ? TAGLINE.EN : null, ...(beat.actions || []).map(a => a.label),
   ].filter(Boolean);
 }
 
@@ -56,6 +57,14 @@ function Visual({ v, w, copy }) {
       </div>)}</dl>;
     case 'statement':
       return <p className="story-statement">{v.dir ? <span dir={v.dir}>{w(v.text)}</span> : w(v.text)}</p>;
+    case 'tagline': {
+      // العربية «تُضاء» بشعاع يعبرها، والإنجليزية «تتضح» بنفس تأثير الوضوح الذي تتكشّف به القصة
+      const isAr = v.primary === 'ar';
+      const ar = <p key="ar" lang="ar" dir="rtl" className={isAr ? 'tagline-lockup-major' : 'tagline-lockup-minor'}><span className="tagline-light" dir="rtl">{TAGLINE.AR}</span></p>;
+      const en = <p key="en" lang="en" dir="ltr" className={isAr ? 'tagline-lockup-minor' : 'tagline-lockup-major'}>{w(TAGLINE.EN)}</p>;
+      const beam = <span key="beam" className="tagline-lockup-beam" aria-hidden="true" />;
+      return <div className={`tagline-lockup tagline-lockup--${v.primary}`}>{isAr ? [ar, beam, en] : [en, beam, ar]}</div>;
+    }
     case 'question':
       return <p className="story-question"><span>{w(v.text)}</span><span aria-hidden="true">↓</span></p>;
     default:

@@ -8,6 +8,7 @@
 //   map       ما ينقص ← ما تقدمه منارة             cards     بطاقات (activity | need | way)
 //   gap       الطموح مقابل المتاح (وصفي، بلا نسب)   statement عبارة ختامية بارزة
 //   question  سؤال انتقالي يمهّد للفصل التالي (نص فقط)       actions   أزرار المشاركة (intent يحدد موضوع رسالة التواصل)
+//   tagline   توقيع الشعار الرسمي بلغتيه؛ primary = لغة السطر الأكبر
 export const manaraStory = {
   AR: {
     label: 'حكاية منارة', scroll: 'اتبع الضوء لتكتشف حكايتنا',
@@ -39,8 +40,8 @@ export const manaraStory = {
             ],
           },
           {
-            // عبارة إنجليزية داخل صفحة عربية: كل كلمة inline-block فيلزم اتجاه ltr ليبقى ترتيب الكلمات صحيحاً
-            visual: { kind: 'statement', dir: 'ltr', text: '**From confusion to clarity.**' },
+            // لحظة ولادة منارة: توقيع الشعار بلغتيه (lib/tagline.js) — العربية أولاً في الصفحة العربية
+            visual: { kind: 'tagline', primary: 'ar' },
           },
         ],
       },
@@ -109,7 +110,7 @@ export const manaraStory = {
             ],
           },
           {
-            visual: { kind: 'statement', text: '**From confusion to clarity.**' },
+            visual: { kind: 'tagline', primary: 'en' },
           },
         ],
       },

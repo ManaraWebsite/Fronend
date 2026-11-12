@@ -7,7 +7,7 @@ export const translations = {
     contact: "اتصل بنا",
     join: "انضم إلينا",
     heroSub: "مستقبل تقني جديد",
-    heroTitle: "نُورٌ يُبَدِّدُ الظَّلَامَ",
+    heroTitle: "نورٌ يُبدِّدُ الظلامَ", // الشعار الرسمي كما اعتمده الفريق (lib/tagline.js)
     heroTitle2: "حين يضيع الطريق، نرفع منارة",
     heroDesc: "فريق شبابي من غزة يصنع للطلاب فرصًا حقيقية للتعلّم: ورشات تقنية، وتدريب ميداني، ومشاريع تُحوِّل المعرفة إلى مهارة، مهما اشتدّت الظروف.",
     aboutTitle: "نحن لا نعلم فقط... نحن نعيد صياغة الواقع الرقمي",
@@ -43,6 +43,7 @@ export const translations = {
     footerLinksTitle: "روابط سريعة",
     footerDesc: "مبادرة تعليمية تقنية ولدت من رحم المعاناة في غزة، لتمكين الشباب الفلسطيني في المجال البرمجي والتقني والمهاري وفق أعلى المعايير الدولية",
     footerRights: "© 2026 منارة جميع الحقوق محفوظة مبادرة تقنية من قلب التحدي",
+    footerDevelopedBy: "تطوير",
     successStories: {
       title: "أصوات من الميدان",
       subtitle: "قصص نجاح كتبت بالتعب والأمل",
@@ -59,7 +60,7 @@ export const translations = {
     contact: "Contact Us",
     join: "Join Us",
     heroSub: "A New Tech Future",
-    heroTitle: "Light That Dispels Darkness",
+    heroTitle: "From Confusion to Clarity", // الشعار الرسمي بالإنجليزية (lib/tagline.js)
     heroTitle2: "Where the path is lost, we raise a lighthouse",
     heroDesc: "A youth team from Gaza creating real learning opportunities for students: technical workshops, field training and projects that turn knowledge into skill, whatever the circumstances.",
     aboutTitle: "We don't just teach... we reshape the digital reality",
@@ -95,6 +96,7 @@ export const translations = {
   footerLinksTitle: "Quick Links",
   footerDesc: "A technical educational initiative born from the heart of hardship in Gaza, empowering Palestinian youth in software, technology, and skills according to highest international standards.",
   footerRights: "© 2026 Manara. All rights reserved. A technical initiative from the heart of challenge.",
+  footerDevelopedBy: "Developed by",
   
   navAbout: "About Us",
   navServices: "Training Services",
